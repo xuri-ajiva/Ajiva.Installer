@@ -1,0 +1,33 @@
+<Application xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:local="using:Ajiva.Installer"
+             xmlns:viewModels="clr-namespace:Ajiva.Installer.ViewModels"
+             x:Class="Ajiva.Installer.App">
+    <Application.Resources>
+        <viewModels:BitmapValueConverter x:Key="BitmapValueConverter" />
+        <Color x:Key="Main">#43ADF4</Color>
+        <Color x:Key="TextColor">#43ADF4</Color>
+        <Color x:Key="Border">#f35f23</Color>
+        <SolidColorBrush x:Key="ProgressBar" Color="#435FBFE9" />
+
+        <SolidColorBrush x:Key="TextBrush" Color="{StaticResource TextColor}" />
+    </Application.Resources>
+    <Application.DataTemplates>
+        <local:ViewLocator />
+    </Application.DataTemplates>
+
+    <Application.Styles>
+        <FluentTheme Mode="Dark" />
+        <Style Selector="TextBlock">
+            <Setter Property="Foreground">
+                <SolidColorBrush Color="{StaticResource TextColor}" />
+            </Setter>
+        </Style>
+        <Style Selector="Border">
+            <Setter Property="BorderBrush">
+                <SolidColorBrush Color="{StaticResource TextColor}" />
+            </Setter>
+        </Style>
+
+    </Application.Styles>
+</Application>
