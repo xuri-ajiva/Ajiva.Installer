@@ -1,0 +1,67 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:viewModels="clr-namespace:Ajiva.Installer.ViewModels"
+             mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
+             x:Class="Ajiva.Installer.Views.Options">
+    <UserControl.Resources>
+        <ColumnDefinitions x:Key="NameWidth">
+            <ColumnDefinition Width="300" />
+            <ColumnDefinition Width="1" />
+        </ColumnDefinitions>
+    </UserControl.Resources>
+    <Design.DataContext>
+        <viewModels:InstalledInfo />
+    </Design.DataContext>
+    <StackPanel>
+        <TabControl>
+            <TabItem Header="Options">
+                <StackPanel>
+                    <!--<Grid ColumnDefinitions="140,*">
+                        <TextBlock Text="WidthIcon" />
+                        <TextBox Grid.Column="1" Text="{Binding Path=WidthIcon, Mode=TwoWay}" />
+                    </Grid>
+                    <Grid ColumnDefinitions="140,*">
+                        <TextBlock Text="WidthText" />
+                        <TextBox Grid.Column="1" Text="{Binding Path=WidthText,Mode= TwoWay}" />
+                    </Grid>-->
+                    <Grid ColumnDefinitions="140,*">
+                        <TextBlock Text="Name" />
+                        <TextBox Grid.Column="1" Text="{Binding Path=Name,Mode= TwoWay}" />
+                    </Grid>
+                    <Grid ColumnDefinitions="140,*">
+                        <TextBlock Text="Description" />
+                        <TextBox Grid.Column="1" Text="{Binding Path=Description,Mode= TwoWay}" />
+                    </Grid>
+                    <Grid ColumnDefinitions="140,*">
+                        <TextBlock Text="IconSrc" />
+                        <TextBox Grid.Column="1" Text="{Binding Path=IconSrc,Mode= TwoWay}" />
+                    </Grid>
+                    <Grid ColumnDefinitions="140,*">
+                        <TextBlock Text="Path" />
+                        <TextBox Grid.Column="1" Text="{Binding Path=Path,Mode= OneWay}" IsReadOnly="True" />
+
+                    </Grid>
+                </StackPanel>
+            </TabItem>
+            <TabItem Header="ExecutingOptions">
+                <StackPanel>
+                    <Grid ColumnDefinitions="140,*">
+                        <TextBlock Text="Executable" />
+                        <TextBox Grid.Column="1" Text="{Binding Path=ExecutingOptions.Executable, Mode=TwoWay}" />
+                    </Grid>
+                    <Grid ColumnDefinitions="140,*">
+                        <TextBlock Text="WorkDirectory" />
+                        <TextBox Grid.Column="1" Text="{Binding Path=ExecutingOptions.WorkDirectory,Mode= TwoWay}" />
+                    </Grid>
+                    <Grid ColumnDefinitions="140,*">
+                        <TextBlock Text="Args" />
+                        <TextBox Grid.Column="1" Text="{Binding Path=ExecutingOptions.Args,Mode= TwoWay}" />
+                    </Grid>
+                </StackPanel>
+            </TabItem>
+
+        </TabControl>
+    </StackPanel>
+</UserControl>
