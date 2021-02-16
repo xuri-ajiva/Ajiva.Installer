@@ -9,7 +9,7 @@ namespace Ajiva.Installer.Core.Net
 {
     internal static class AjivaNetUtils
     {
-        public static int MaxWaitTime { get; set; } = 10000;
+        public static int MaxWaitTime { get; set; } = 30000;
 
         public static async Task ClientLoop(TcpClient client, Action<AjivaNetHead, AjivaMemory, TcpClient, CancellationToken> callback, CancellationToken cancellationToken)
         {
@@ -32,7 +32,7 @@ namespace Ajiva.Installer.Core.Net
 
             while (client.Available < header.Length)
             {
-                await Task.Delay(10, cancellationToken);
+                await Task.Delay(1, cancellationToken);
             }
 
             var read = str.Read(header.Span);
@@ -44,7 +44,7 @@ namespace Ajiva.Installer.Core.Net
             var data = new AjivaMemory(head.DataLength);
             for (var i = 0; i < MaxWaitTime && client.Available < data.Length; i++)
             {
-                await Task.Delay(10, cancellationToken);
+                await Task.Delay(1, cancellationToken);
             }
 
             read = str.Read(data.Span);
