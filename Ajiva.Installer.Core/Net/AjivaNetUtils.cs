@@ -7,33 +7,18 @@ using System.Threading.Tasks;
 
 namespace Ajiva.Installer.Core.Net
 {
+    delegate void DataReceivedCallback<T>(AjivaNetHead head, AjivaMemory body, TcpClient client, CancellationToken cancellationToken) where T : Enum;
+
     internal static class AjivaNetUtils
     {
         public static int MaxWaitTime { get; set; } = 30000;
-
-        public static async Task ClientLoop(TcpClient client, Action<AjivaNetHead, AjivaMemory, TcpClient, CancellationToken> callback, CancellationToken cancellationToken)
-        {
-            var header = NewHeader();
-
-            while (client.Connected && !cancellationToken.IsCancellationRequested)
-            {
-                var (head, data) = await GetPaket(client, cancellationToken, header);
-
-                callback(head, data, client, cancellationToken);
-            }
-            if (client.Connected)
-                client.Close();
-        }
-
-        public static async Task<(AjivaNetHead head, AjivaMemory data)> GetPaket(TcpClient client, CancellationToken cancellationToken, AjivaMemory? header = null)
+        
+        public static async Task<(AjivaNetHead head, AjivaMemory data)> GetPaket<T>(TcpClient client, CancellationToken cancellationToken, AjivaMemory? header = null) where T : Enum
         {
             header ??= NewHeader();
             var str = client.GetStream();
 
-            while (client.Available < header.Length)
-            {
-                await Task.Delay(1, cancellationToken);
-            }
+            while (client.Available < header.Length) await Task.Delay(1, cancellationToken);
 
             var read = str.Read(header.Span);
             Debug.Assert(read == header.Length);
@@ -42,21 +27,17 @@ namespace Ajiva.Installer.Core.Net
             if (head.DataLength == 0) return (head, new(0));
 
             var data = new AjivaMemory(head.DataLength);
-            for (var i = 0; i < MaxWaitTime && client.Available < data.Length; i++)
-            {
-                await Task.Delay(1, cancellationToken);
-            }
+
+            for (var i = 0; i < MaxWaitTime && client.Available < data.Length; i++) await Task.Delay(1, cancellationToken);
 
             read = str.Read(data.Span);
             Debug.Assert(read == data.Length);
             return (head, data);
         }
 
-        private static int HeaderSize { get; } = Unsafe.SizeOf<AjivaNetHead>();
-
         public static AjivaMemory NewHeader()
         {
-            return new(HeaderSize);
+            return new(Unsafe.SizeOf<AjivaNetHead>());
         }
 
         public static T Decode<T>(AjivaMemory memory) where T : struct
@@ -73,39 +54,7 @@ namespace Ajiva.Installer.Core.Net
             return ret;
         }
 
-        public static async Task<bool> HandShake(TcpClient client, bool server, CancellationToken cancellationToken)
-        {
-            var support = new AjivaNetHead {Type = PaketType.HandShake, Version = 1, Index = 0};
 
-            bool VersionMisMatch(AjivaNetHead remote)
-            {
-                Console.WriteLine($"Versions: support:{support.Version}, remote:{remote.Version}");
-                return support.Version != remote.Version;
-            }
-
-            var trust = Guid.NewGuid();
-
-            if (server) await SendPaket(client, support, AjivaMemory.With(trust), cancellationToken);
-
-            var (head, data) = await GetPaket(client, cancellationToken);
-
-            var href = 0;
-            Guid check;
-            if (server)
-            {
-                if (VersionMisMatch(head)) return false;
-
-                check = data.Read<Guid>(ref href);
-                Console.WriteLine($"Handshake Part Server: {trust}, Client: {check}");
-                return check == trust;
-            }
-            if (VersionMisMatch(head)) return false;
-
-            check = data.Read<Guid>(ref href);
-            Console.WriteLine($"Handshake Part Server: {check}");
-            await SendPaket(client, support, AjivaMemory.With(check), cancellationToken);
-            return true;
-        }
 
         public static async Task SendPaket(TcpClient client, AjivaNetHead head, AjivaMemory data, CancellationToken cancellationToken)
         {

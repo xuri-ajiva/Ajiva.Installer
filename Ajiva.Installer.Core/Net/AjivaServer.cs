@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Net;
 using System.Net.Sockets;
 using System.Threading;
@@ -6,14 +7,46 @@ using System.Threading.Tasks;
 
 namespace Ajiva.Installer.Core.Net
 {
-    public class AjivaServer
+    public class AjivaServer<T> where T : Enum
     {
+        private readonly T handShake;
         private readonly TcpListener listener;
 
-        public AjivaServer(IPEndPoint iEndpoint)
+        public Queue<ClientBody> ReceivedPackets = new();
+        public PacketReceivedDelegate? PacketReceived;
+
+        public class ClientBody
         {
+            public T Type { get; set; }
+            public AjivaMemory Memory { get; set; }
+            public AjivaClient<T> Client { get; set; }
+
+            public ClientBody(T type, AjivaMemory memory, AjivaClient<T> client)
+            {
+                Type = type;
+                Memory = memory;
+                Client = client;
+            }
+
+            /// <inheritdoc />
+            public override string ToString()
+            {
+                return $"{nameof(Type)}: {Type}, {nameof(Client)}: {Client.ClientId}, {nameof(Memory)}: {Memory.AsString()}";
+            }
+        }
+
+        /// <returns>if packet should be added to ReceivedPackets</returns>
+        public delegate bool PacketReceivedDelegate(ClientBody body);
+
+        public event Action<AjivaClient<T>>? OnClientHandShakeSucceeded;
+
+        public AjivaServer(IPEndPoint iEndpoint, T handShake)
+        {
+            this.handShake = handShake;
             listener = new(iEndpoint);
         }
+
+        public int currentId { get; private set; } = 1;
 
         public async Task Start(CancellationToken cancellationToken, Action<string> logger)
         {
@@ -29,25 +62,41 @@ namespace Ajiva.Installer.Core.Net
                 }
 
                 logger("Got Client!");
-                var client = await listener.AcceptTcpClientAsync();
-                await Task.Factory.StartNew(async () => await HandleClient(client, cancellationToken), cancellationToken);
+                var client = AjivaClient<T>.ServerClient(await listener.AcceptTcpClientAsync(), handShake, currentId++);
+
+                await SetupClient(client, cancellationToken);
             }
         }
 
-        private static async Task HandleClient(TcpClient client, CancellationToken cancellationToken)
+        private async Task SetupClient(AjivaClient<T> client, CancellationToken cancellationToken)
         {
-            if (await AjivaNetUtils.HandShake(client, true, cancellationToken))
+            client.OnHandShakeFailed += () =>
             {
-                await AjivaNetUtils.SendPaket(client, new() {Type = PaketType.Hello, Version = 1}, new(0), cancellationToken);
-                await AjivaNetUtils.ClientLoop(client, ServerClientCallback, cancellationToken);
-            }
+                //todo
+            };
+            client.OnHandShakeSucceeded += () =>
+            {
+                clients.Add(client);
+                OnClientHandShakeSucceeded?.Invoke(client);
+                Task.Factory.StartNew(async () =>
+                {
+                    await client.RunClient(cancellationToken);
+                }, cancellationToken);
+            };
+            client.PacketReceived = body => ClientPacketReceived(client, body);
+
+            await client.HandShake(true, cancellationToken);
         }
 
-        private static async void ServerClientCallback(AjivaNetHead arg1, AjivaMemory arg2, TcpClient arg3, CancellationToken arg4)
+        private bool ClientPacketReceived(AjivaClient<T> ajivaClient, Body<T> body)
         {
-            Console.WriteLine($"Packet Server got {arg2.Length} v:{arg1.Version}, {arg2.AsString()}");
+            var clientBody = new ClientBody(body.Type, body.Memory, ajivaClient);
 
-            await AjivaNetUtils.SendPaket(arg3, new() {Type = PaketType.Response, Version = 1}, AjivaMemory.String("Hello back from server"), arg4);
+            if (PacketReceived == null || PacketReceived.Invoke(clientBody)) ReceivedPackets.Enqueue(clientBody);
+
+            return false;
         }
+
+        private List<AjivaClient<T>> clients = new();
     }
 }

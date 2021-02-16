@@ -1,12 +1,13 @@
 ﻿using System;
 using System.Buffers;
+using System.ComponentModel.Design;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Text;
 
 namespace Ajiva.Installer.Core.Net
 {
-    internal class AjivaMemory
+    public class AjivaMemory
     {
         public int Length => mem.Length;
         private readonly Memory<byte> mem;
@@ -71,6 +72,8 @@ namespace Ajiva.Installer.Core.Net
             head += Unsafe.SizeOf<T>();
             return res;
         }
+
+        public static AjivaMemory Empty => new AjivaMemory(0);
 
         public static AjivaMemory String(string message)
         {
