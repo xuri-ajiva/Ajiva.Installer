@@ -41,9 +41,9 @@ namespace Ajiva.Installer.Core
             }
 
             ConsoleMenu menu = new();
-            menu.ShowMenu("Select Action: ", new ConsoleMenuItem("Copy: ", CopyExample), new ConsoleMenuItem("Pack: ", PackSome), new ConsoleMenuItem("FromPack: ", FromSomePack));
+            //menu.ShowMenu("Select Action: ", new ConsoleMenuItem("Copy: ", CopyExample), new ConsoleMenuItem("Pack: ", PackSome), new ConsoleMenuItem("FromPack: ", FromSomePack));
 
-            //ServerTest(source);
+            ServerTest(source);
 
             Console.ReadKey();
             source.Cancel();
@@ -53,32 +53,67 @@ namespace Ajiva.Installer.Core
         private static void ServerTest(CancellationTokenSource source)
         {
             const int port = 8347;
-            AjivaServer server = new(new(IPAddress.Any, port));
-            AjivaClient client = new(new(IPAddress.Parse("127.0.0.1"), port));
 
-            Task.Run(async () =>
+            void StartOneServer()
             {
-                try
+                AjivaServer<PaketType> server = new(new(IPAddress.Any, port), PaketType.HandShake);
+
+                server.OnClientHandShakeSucceeded += ajivaClient =>
                 {
-                    await server.Start(source.Token, Console.WriteLine);
-                }
-                catch (Exception e)
+                    ajivaClient.SendPackets.Enqueue(new(PaketType.Hello, AjivaMemory.Empty));
+                };
+
+                server.PacketReceived = body =>
                 {
-                    Console.WriteLine(e);
-                }
-            }, source.Token);
-            Thread.Sleep(100);
-            Task.Run(async () =>
+                    Console.WriteLine(body);
+
+                    body.Client.SendPackets.Enqueue(new(PaketType.Response, AjivaMemory.String("Hello from server")));
+                    return false;
+                };
+                Task.Run(async () =>
+                {
+                    try
+                    {
+                        await server.Start(source.Token, Console.WriteLine);
+                    }
+                    catch (Exception e)
+                    {
+                        Console.WriteLine(e);
+                    }
+                }, source.Token);
+            }
+
+            void StartOneClient()
             {
-                try
+                AjivaClient<PaketType> client = AjivaClient<PaketType>.Client(new(IPAddress.Parse("127.0.0.1"), port), PaketType.HandShake);
+                client.PacketReceived = body =>
                 {
-                    await client.Connect(source.Token);
-                }
-                catch (Exception e)
+                    Console.WriteLine(body);
+                    client.SendPackets.Enqueue(new(PaketType.Response, AjivaMemory.String($"Hello from client {client.ClientId}")));
+
+                    return false;
+                };
+
+                Thread.Sleep(100);
+                Task.Run(async () =>
                 {
-                    Console.WriteLine(e);
-                }
-            }, source.Token);
+                    try
+                    {
+                        await client.Connect(source.Token);
+                    }
+                    catch (Exception e)
+                    {
+                        Console.WriteLine(e);
+                    }
+                }, source.Token);
+            }
+
+            StartOneServer();
+
+            StartOneClient();
+            StartOneClient();
+            StartOneClient();
+            StartOneClient();
         }
     }
 }
