@@ -1,7 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using System.Text;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 using Ajiva.Installer.Core.ConsoleExt;
 using Ajiva.Installer.Core.Installer.FileTypes;
 
@@ -9,7 +13,7 @@ namespace Ajiva.Installer.Core.Installer
 {
     internal class AjivaInstallPacker
     {
-        private static readonly byte[] Header = {(byte)'I', (byte)'N', (byte)'S', (byte)'T', (byte)'_', (byte)'P', (byte)'A', (byte)'C', (byte)'K'};
+        private static readonly byte[] PackHeader = {(byte)'I', (byte)'N', (byte)'S', (byte)'T', (byte)'_', (byte)'P', (byte)'A', (byte)'C', (byte)'K'};
         private const string PackageExtension = ".inst_pack";
 
         private const int BufferLength = 4194304;
@@ -18,49 +22,143 @@ namespace Ajiva.Installer.Core.Installer
         {
             path = Path.GetFullPath(path);
             var @out = Path.Combine(path, "..", name + PackageExtension);
-            if (File.Exists(@out))
-            {
-                if (!LogHelper.YesNow($"Delete Existing file: {@out}")) return;
+            if (!OpenFile(@out, out FileStream pack)) return;
 
-                File.Delete(@out);
-            }
-            FileStream fs = File.Open(@out, FileMode.CreateNew, FileAccess.Write)!;
-            List<FileInfo> files = new();
+            FileDescriptor MkFileDescriptor(FileInfo arg) => new(arg, arg.FullName.Substring(path.Length + 1), 0, arg.Length);
 
-            RecEnumerator(new(path), files);
-            fs.Write(Header);
+            var files = RecEnumerator(new(path)).Select(MkFileDescriptor).ToList();
 
-            foreach (var file in files)
-            {
-                var pos = fs.Position;
-                try
-                {
-                    WriteFile(file, path, fs);
-                }
-                catch (Exception e)
-                {
-                    LogHelper.Log($"Failed to add: {file.FullName} ({e.Message})");
-                    fs.Position = pos;
-                }
-            }
-            fs.Flush();
-            fs.Close();
+            WritePack(pack, files);
             LogHelper.Log($"Finished: {@out}");
         }
 
-        private void WriteFile(FileInfo file, string path, Stream fs)
+        public class FileDescriptor
         {
-            var fName = file.FullName.Substring(path.Length + 1);
+            public FileInfo FileInfo { get; set; }
+            public string RelPath { get; set; }
+            public long Pos { get; set; }
+            public long Length { get; set; }
 
-            WriteString(fName, fs);
-            var ln = file.Length;
-            fs.Write(BitConverter.GetBytes(ln));
+            public FileDescriptor(FileInfo fileInfo, string relPath, long pos, long length)
+            {
+                FileInfo = fileInfo;
+                RelPath = relPath;
+                Pos = pos;
+                Length = length;
+            }
+
+            public int FileDescriptorLength => sizeof(ushort) + RelPath.Length + sizeof(long) + sizeof(long);
+
+            internal class WriteIt
+            {
+                public int Size;
+                public byte[] Value;
+            }
+
+            public void WriteHeadTo(MemoryStream header)
+            {
+                header.Write(BitConverter.GetBytes((ushort)RelPath.Length));
+                header.Write(Encoding.UTF8.GetBytes(RelPath));
+                header.Write(BitConverter.GetBytes(Pos));
+                header.Write(BitConverter.GetBytes(Length));
+            }
+
+            public static FileDescriptor ReadHeadFrom(MemoryStream header)
+            {
+                Span<byte> tmp = new byte[sizeof(ushort)];
+
+                header.Read(tmp);
+                tmp = new byte[BitConverter.ToInt16(tmp)]; //str length
+                header.Read(tmp);
+                var relPath = Encoding.UTF8.GetString(tmp);
+                tmp = new byte[sizeof(long)];
+                header.Read(tmp);
+                var pos = BitConverter.ToInt64(tmp);
+                header.Read(tmp);
+                var length = BitConverter.ToInt64(tmp);
+                return new(null!, relPath, pos, length);
+            }
+        }
+
+        private void WritePack(FileStream pack, List<FileDescriptor> files)
+        {
+            var headBuffer = new byte[files.Sum(x => x.FileDescriptorLength)];
+            var headMmStr = new MemoryStream(headBuffer);
+
+            WriteHead(pack, new(files.Count, headBuffer.Length, "aaa", "vvv", "bbb", "ddd"));
+
+            var ph = pack.Position;
+            pack.Position = ph + headBuffer.Length;
+            var p0 = pack.Position;
+
+            foreach (var file in files)
+            {
+                file.Pos = pack.Position - p0;
+                try
+                {
+                    WriteFile(file, pack);
+                }
+                catch (Exception e)
+                {
+                    LogHelper.Log($"Failed to add: {file.RelPath} ({e.Message})");
+                    file.Length = 0;
+                    pack.Position = p0 + file.Pos; //reset head
+                    pack.SetLength(p0 + file.Pos); //remove allocation
+                    //todo set some error bit?
+                }
+
+                file.WriteHeadTo(headMmStr);
+            }
+            Debug.Assert(headMmStr.Position == headMmStr.Length);
+
+            pack.Flush();
+            pack.Position = ph;
+            headMmStr.WriteTo(pack);
+
+            pack.Close();
+        }
+
+        private record PackHead(long FilesCount, int HeadLength, string Name, string Description, string Executable, string Arguments)
+        {
+            [JsonConstructor]
+            public PackHead() : this(default!, default!, default!, default!, default!, default!)
+            {
+            }
+        }
+
+        private static void WriteHead(Stream pack, PackHead head)
+        {
+            pack.Write(PackHeader);
+
+            WriteAsJson(pack, head);
+        }
+
+        private static PackHead ReadHead(Stream pack)
+        {
+            Span<byte> tmp = new byte[PackHeader.Length];
+
+            pack.Read(tmp);
+            if (!tmp.SequenceEqual(PackHeader))
+            {
+                pack.Close();
+                throw new ArgumentException("File is not the right type!");
+            }
+
+            var obj = ReadJsonObjectAs<PackHead>(pack, out _);
+            return obj!;
+        }
+
+        private void WriteFile(FileDescriptor file, Stream fs)
+        {
+            //todo remove from read this: WriteString(fName, fs);
+            //todo s.o. var ln = file.Length;
+            //todo s.o. fs.Write(BitConverter.GetBytes(ln));
 
             Span<byte> span = new(buffer);
-            var fIn = file.OpenRead();
+            var fIn = file.FileInfo.OpenRead();
 
             long ptr = 0;
-            while (ptr < ln)
+            while (ptr < file.Length)
             {
                 var read = fIn.Read(span);
 
@@ -80,45 +178,46 @@ namespace Ajiva.Installer.Core.Installer
             fs.Write(Encoding.UTF8.GetBytes(value));
         }
 
-        private static void RecEnumerator(DirectoryInfo dir, List<FileInfo> files)
+        private static IEnumerable<FileInfo> RecEnumerator(DirectoryInfo dir)
         {
-            files.AddRange(dir.EnumerateFiles());
-
-            foreach (var directory in dir.EnumerateDirectories()) RecEnumerator(directory, files);
+            return dir.EnumerateFiles().Concat(dir.EnumerateDirectories().SelectMany(RecEnumerator));
         }
 
         public AjivaInstallInfo FromPack(string pack)
         {
             FileStream fs = File.OpenRead(File.Exists(pack) ? pack : File.Exists(pack + PackageExtension) ? pack + PackageExtension : throw new ArgumentException("Path is not a File!"));
 
-            Span<byte> head = new byte[Header.Length];
+            var head = ReadHead(fs);
 
-            fs.Read(head);
-            if (!head.SequenceEqual(Header))
+            var info = new AjivaInstallInfo
             {
-                fs.Close();
-                throw new ArgumentException("File is not the right type!");
-            }
+                Arguments = head.Arguments,
+                Name = head.Name,
+                Description = head.Description,
+                Executabe = head.Executable
+            };
 
-            var info = new AjivaInstallInfo();
-            info.Arguments = "TODO";
-            info.Name = "TODO";
-            info.Description = "TODO";
-            info.Executabe = "TODO";
+            FileDescriptor[] files = new FileDescriptor[head.FilesCount];
+
+            byte[] headBuffer = new byte[head.HeadLength];
+            fs.Read(headBuffer);
+            MemoryStream headBufferStr = new(headBuffer);
+
+            for (var i = 0; i < head.FilesCount; i++)
+            {
+                files[i] = FileDescriptor.ReadHeadFrom(headBufferStr);
+            }
 
             var ln = fs.Length - fs.Position;
 
             AjivaInstallInfo BuildFromMemory()
             {
-                var ptr = 0;
-                byte[] fileBuffer = new byte[ln]; // all data except header
+                Memory<byte> fileBuffer = new byte[ln]; // all data except header
+                fs.Read(fileBuffer.Span);
 
-                fs.Read(fileBuffer.AsSpan());
-
-                while (ptr < ln)
+                foreach (var file in files)
                 {
-                    info.Files.Add(FromMemory(fileBuffer.AsMemory(ptr), out var dataLength));
-                    ptr += dataLength;
+                    info.Files.Add(new MemoryInstallerFile {Data = fileBuffer.Slice((int)file.Pos, (int)file.Length), Length = file.Length, Location = file.RelPath});
                 }
 
                 return info;
@@ -128,13 +227,12 @@ namespace Ajiva.Installer.Core.Installer
             {
                 var pos = fs.Position;
                 object syncLock = new();
-
-                while (pos < ln)
+                
+                foreach (var file in files.OrderBy(x => x.Pos))
                 {
-                    info.Files.Add(FromFile(fs, pos, ref syncLock, out var dataLength));
-                    pos += dataLength;
+                    info.Files.Add(new PackFileInstallerFile(fs, ref syncLock, pos + file.Pos){ Length = file.Length, Location = file.RelPath});
                 }
-
+                
                 return info;
             }
 
