@@ -192,5 +192,42 @@ namespace Ajiva.Installer.Core.Installer
                 Location = location,
             };
         }
+
+        private static T? ReadJsonObjectAs<T>(Stream pack, out uint length) where T : class, new()
+        {
+            Span<byte> tmp = new byte[sizeof(uint)];
+            pack.Read(tmp);
+            var jsonLength = BitConverter.ToUInt32(tmp);
+            tmp = new byte[jsonLength];
+            pack.Read(tmp);
+            var json = Encoding.UTF8.GetString(tmp);
+            length = sizeof(uint) + jsonLength;
+            return JsonSerializer.Deserialize<T>(json);
+        }
+
+        private static uint WriteAsJson<T>(Stream pack, T head) where T : class, new()
+        {
+            var json = JsonSerializer.Serialize(head);
+            var bits = Encoding.UTF8.GetBytes(json);
+            pack.Write(BitConverter.GetBytes((uint)bits.Length));
+            pack.Write(bits);
+            return (uint)(bits.Length + sizeof(uint));
+        }
+
+        private static bool OpenFile(string @out, out FileStream fs)
+        {
+            if (File.Exists(@out))
+            {
+                if (!LogHelper.YesNow($"Delete Existing file: {@out}"))
+                {
+                    fs = default!;
+                    return false;
+                }
+
+                File.Delete(@out);
+            }
+            fs = File.Open(@out, FileMode.CreateNew, FileAccess.Write)!;
+            return true;
+        }
     }
 }
