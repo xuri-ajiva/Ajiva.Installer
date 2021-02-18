@@ -2,6 +2,7 @@
 using System.Collections.Concurrent;
 using System.IO;
 using System.Threading;
+using Ajiva.Installer.Core.Installer.Pack;
 
 namespace Ajiva.Installer.Core.Installer
 {
@@ -27,12 +28,25 @@ namespace Ajiva.Installer.Core.Installer
 
             long files = 0;
             long bytes = 0;
-            foreach (var infoFile in installInfo.Files)
+
+            void AddRecursive(string dirPathRec, StructureDirectory directory)
             {
-                bytes += infoFile.Length;
-                files++;
-                ToInstall.Enqueue(new(path, infoFile));
+                dirPathRec = Path.Combine(dirPathRec, directory.Name);
+                Directory.CreateDirectory(dirPathRec);
+
+                foreach (var infoFile in directory.Files)
+                {
+                    bytes += infoFile.Length;
+                    files++;
+                    ToInstall.Enqueue(new(path, dirPathRec, infoFile.File!));
+                }
+                foreach (var structureDirectory in directory.Directories)
+                {
+                    AddRecursive(dirPathRec, structureDirectory);
+                }
             }
+
+            AddRecursive("", installInfo.Root);
 
             sync.Release((int)files);
             Interlocked.Add(ref TotalBytes, bytes);
@@ -73,11 +87,11 @@ namespace Ajiva.Installer.Core.Installer
                     WorkFile(inst);
                     break;
                 }
-                if (ToInstall.IsEmpty)
-                {
-                    PresentPercent();
-                    Logger("Finished!");
-                }
+
+                if (!ToInstall.IsEmpty) continue;
+
+                PresentPercent();
+                Logger("Finished!");
             }
         }
 
