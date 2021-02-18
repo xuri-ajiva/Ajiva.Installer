@@ -4,6 +4,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Ajiva.Installer.Core.ConsoleExt;
 using Ajiva.Installer.Core.Installer;
+using Ajiva.Installer.Core.Installer.Pack;
 using Ajiva.Installer.Core.Net;
 
 namespace Ajiva.Installer.Core
@@ -14,17 +15,18 @@ namespace Ajiva.Installer.Core
         {
             CancellationTokenSource source = new();
 
-            var installer = new AjivaInstaller(16, new ConsoleRolBlock(10).WriteNext);
+            Action<string> lochPtr = new ConsoleRolBlock(10).WriteNext;
+            var installer = new AjivaInstaller(16,lochPtr );
             installer.PersentageChanged += d => new ConsoleBlock(1).WriteAt("Installer: " + d, 0);
 
-            AjivaInstallPacker packer = new();
+            AjivaInstallPacker packer = new AjivaInstallPacker(lochPtr);
 
             void CopyExample()
             {
-                var installInfo = AjivaInstallInfo.DirCopy(LogHelper.GetInput("Path"));
+                //var installInfo = AjivaInstallInfo.DirCopy(LogHelper.GetInput("Path"));
 
-                installer.InstallAsync(installInfo, "../cpy");
-                installInfo = null;
+                //installer.InstallAsync(installInfo, "../cpy");
+                //installInfo = null;
             }
 
             void PackSome()
@@ -41,9 +43,9 @@ namespace Ajiva.Installer.Core
             }
 
             ConsoleMenu menu = new();
-            //menu.ShowMenu("Select Action: ", new ConsoleMenuItem("Copy: ", CopyExample), new ConsoleMenuItem("Pack: ", PackSome), new ConsoleMenuItem("FromPack: ", FromSomePack));
+            menu.ShowMenu("Select Action: ", new ConsoleMenuItem("Copy: ", CopyExample), new ConsoleMenuItem("Pack: ", PackSome), new ConsoleMenuItem("FromPack: ", FromSomePack));
 
-            ServerTest(source);
+            //ServerTest(source);
 
             Console.ReadKey();
             source.Cancel();
