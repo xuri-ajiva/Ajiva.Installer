@@ -49,12 +49,6 @@ namespace Ajiva.Installer.Core.Installer
 
             public int FileDescriptorLength => sizeof(ushort) + RelPath.Length + sizeof(long) + sizeof(long);
 
-            internal class WriteIt
-            {
-                public int Size;
-                public byte[] Value;
-            }
-
             public void WriteHeadTo(MemoryStream header)
             {
                 header.Write(BitConverter.GetBytes((ushort)RelPath.Length));
@@ -80,7 +74,7 @@ namespace Ajiva.Installer.Core.Installer
             }
         }
 
-        private void WritePack(FileStream pack, List<FileDescriptor> files)
+        private void WritePack(Stream pack, IReadOnlyCollection<FileDescriptor> files)
         {
             var headBuffer = new byte[files.Sum(x => x.FileDescriptorLength)];
             var headMmStr = new MemoryStream(headBuffer);
@@ -169,15 +163,6 @@ namespace Ajiva.Installer.Core.Installer
             fs.Flush();
         }
 
-        private static void WriteString(string value, Stream fs)
-        {
-            if (value.Length >= ushort.MaxValue) throw new ArgumentException($"Max Path Length: {ushort.MaxValue}");
-            var ln = (ushort)value.Length;
-
-            fs.Write(BitConverter.GetBytes(ln));
-            fs.Write(Encoding.UTF8.GetBytes(value));
-        }
-
         private static IEnumerable<FileInfo> RecEnumerator(DirectoryInfo dir)
         {
             return dir.EnumerateFiles().Concat(dir.EnumerateDirectories().SelectMany(RecEnumerator));
@@ -227,12 +212,12 @@ namespace Ajiva.Installer.Core.Installer
             {
                 var pos = fs.Position;
                 object syncLock = new();
-                
+
                 foreach (var file in files.OrderBy(x => x.Pos))
                 {
-                    info.Files.Add(new PackFileInstallerFile(fs, ref syncLock, pos + file.Pos){ Length = file.Length, Location = file.RelPath});
+                    info.Files.Add(new PackFileInstallerFile(fs, ref syncLock, pos + file.Pos) {Length = file.Length, Location = file.RelPath});
                 }
-                
+
                 return info;
             }
 
@@ -240,56 +225,6 @@ namespace Ajiva.Installer.Core.Installer
         }
 
         private readonly byte[] buffer = new byte[BufferLength];
-        private readonly Memory<byte> memForUShort = new byte[sizeof(ushort)];
-        private readonly Memory<byte> memForLong = new byte[sizeof(long)];
-
-        private string ReadString(FileStream fs)
-        {
-            if (fs.Read(memForUShort.Span) < memForUShort.Length) throw new EndOfStreamException();
-
-            var length = BitConverter.ToUInt16(memForUShort.Span);
-
-            var str = new Span<byte>(buffer, 0, length);
-
-            if (fs.Read(str) < str.Length) throw new EndOfStreamException();
-
-            return Encoding.UTF8.GetString(str);
-        }
-
-        public static MemoryInstallerFile FromMemory(Memory<byte> data, out int dataLength)
-        {
-            var strLn = (int)BitConverter.ToUInt16(data.Span);
-
-            var location = Encoding.UTF8.GetString(data.Span.Slice(sizeof(ushort), strLn));
-
-            var length = BitConverter.ToInt64(data.Span.Slice(sizeof(ushort) + strLn));
-            dataLength = sizeof(ushort) + sizeof(long) + strLn + (int)length;
-
-            return new()
-            {
-                Length = length,
-                Location = location,
-                Data = data.Slice(sizeof(ushort) + sizeof(long) + strLn, (int)length)
-            };
-        }
-
-        private PackFileInstallerFile FromFile(FileStream fs, long head, ref object syncLock, out long dataLength)
-        {
-            fs.Seek(head, SeekOrigin.Begin);
-            var location = ReadString(fs);
-
-            if (fs.Read(memForLong.Span) < memForLong.Length) throw new EndOfStreamException();
-
-            var length = BitConverter.ToInt64(memForLong.Span);
-
-            dataLength = sizeof(ushort) + sizeof(long) + location.Length + length;
-
-            return new(fs, ref syncLock, head + sizeof(ushort) + sizeof(long) + location.Length)
-            {
-                Length = length,
-                Location = location,
-            };
-        }
 
         private static T? ReadJsonObjectAs<T>(Stream pack, out uint length) where T : class, new()
         {
