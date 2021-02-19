@@ -10,6 +10,12 @@ namespace Ajiva.Installer.Core.ConsoleExt
                 Console.WriteLine(obj.ToString());
         }
 
+        public static void LogNoBreak(object obj)
+        {
+            lock (WriteLock)
+                Console.Write(obj.ToString());
+        }
+
         public static void WriteLine(object obj) => Log(obj);
 
         public static void Write(string msg, int position)
@@ -34,22 +40,33 @@ namespace Ajiva.Installer.Core.ConsoleExt
             return Console.ReadLine() ?? "";
         }
 
+        private static ConsoleBlock? YesNo;
+
         public static bool YesNow(string s)
         {
-            while (true)
+            lock (WriteLock)
             {
-                Log(s + " [y/n]");
-                var key = Console.ReadKey();
-                // ReSharper disable once SwitchStatementHandlesSomeKnownEnumValuesWithDefault
-                switch (key.Key)
+                var (left, top) = Console.GetCursorPosition();
+                var msg = s + " [y/n]";
+                YesNo ??= new(1);
+                while (true)
                 {
-                    case ConsoleKey.Y:
-                        return true;
-                    case ConsoleKey.N:
-                        return false;
-                    default:
-                        Log("y/n");
-                        break;
+                    YesNo.WriteAtNoBreak(msg, 0);
+                    Console.SetCursorPosition(msg.Length + 1, YesNo.Top);
+                    var key = Console.ReadKey();
+                    // ReSharper disable once SwitchStatementHandlesSomeKnownEnumValuesWithDefault
+                    switch (key.Key)
+                    {
+                        case ConsoleKey.Y:
+                            Console.SetCursorPosition(left, top + 1);
+                            return true;
+                        case ConsoleKey.N:
+                            Console.SetCursorPosition(left, top + 1);
+                            return false;
+                        default:
+                            msg = s + " [Y/N]! ";
+                            break;
+                    }
                 }
             }
         }
@@ -57,22 +74,29 @@ namespace Ajiva.Installer.Core.ConsoleExt
     public class ConsoleBlock
     {
         public readonly int Count;
-        private readonly int top;
+        public readonly int Top;
 
         public ConsoleBlock(int count)
         {
             lock (LogHelper.WriteLock)
             {
                 this.Count = count;
-                top = Console.CursorTop;
-                Console.SetCursorPosition(0, top + count);
+                Top = Console.CursorTop;
+                Console.SetCursorPosition(0, Top + count);
             }
         }
 
         public void WriteAt(string msg, int position)
         {
             if (position > Count) throw new ArgumentOutOfRangeException(nameof(position), position, "expected les than count: " + Count);
-            LogHelper.Write(msg.FillUp(Console.BufferWidth - 1), top + position);
+            LogHelper.Write(msg.FillUp(Console.BufferWidth), Top + position);
+        }
+
+        public void WriteAtNoBreak(string msg, int position)
+        {
+            if (position > Count) throw new ArgumentOutOfRangeException(nameof(position), position, "expected les than count: " + Count);
+            LogHelper.Write("".FillUp(Console.BufferWidth), Top + position);
+            LogHelper.Write(msg, Top + position);
         }
     }
 
