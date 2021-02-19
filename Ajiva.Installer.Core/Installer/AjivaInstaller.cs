@@ -10,7 +10,7 @@ namespace Ajiva.Installer.Core.Installer
 {
     internal class AjivaInstaller : IDisposable
     {
-        public event Action<double>? PersentageChanged;
+        public event Action<double>? PercentageChanged;
         public event Action<string>? InfoChanged;
         public Action<string> Logger;
 
@@ -169,7 +169,7 @@ namespace Ajiva.Installer.Core.Installer
         private void PresentPercent()
         {
             var percentage = (double)DoneBytes / TotalBytes;
-            PersentageChanged?.Invoke(percentage);
+            PercentageChanged?.Invoke(percentage);
         }
 
         /// <inheritdoc />
