@@ -6,7 +6,7 @@ namespace Ajiva.Installer.Core.Installer.Pack
     {
         public string Name { get; set; }
         public StructureSpecialFolder ParentFolder { get; set; } //change to custom enum
-        
+
         public StructureDirectory(StructureDirectory parent, string name)
         {
             Parent = parent;
@@ -63,7 +63,7 @@ namespace Ajiva.Installer.Core.Installer.Pack
             }
             for (var i = 0; i < Directories.Length; i++)
             {
-                Directories[i] = new(this,"");
+                Directories[i] = new(this, "");
                 Directories[i].ReadFrom(stream);
             }
         }
