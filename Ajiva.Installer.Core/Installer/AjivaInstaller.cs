@@ -35,8 +35,13 @@ namespace Ajiva.Installer.Core.Installer
 
             void AddRecursive(string dirPathRec, StructureDirectory directory)
             {
-                dirPathRec = Path.Combine(dirPathRec, directory.Name);
-                Directory.CreateDirectory(dirPathRec);
+                dirPathRec = MakeStructurePath(directory, cache, dirPathRec);
+                if (!Directory.Exists(dirPathRec))
+                {
+                    Directory.CreateDirectory(dirPathRec);
+                    Logger($"Creating Directory: {directory.Name}");
+                }
+
 
                 foreach (var infoFile in directory.Files)
                 {
@@ -52,9 +57,9 @@ namespace Ajiva.Installer.Core.Installer
 
             AddRecursive("", installInfo.Root);
 
-            sync.Release((int)files);
             Interlocked.Add(ref TotalBytes, bytes);
             Interlocked.Add(ref TotalFiles, files);
+            sync.Release((int)files);
         }
 
         private readonly Thread[] workers;
