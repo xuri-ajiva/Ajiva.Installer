@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Threading;
 using Ajiva.Installer.Core.Installer.Pack;
 
@@ -28,6 +30,8 @@ namespace Ajiva.Installer.Core.Installer
 
             long files = 0;
             long bytes = 0;
+
+            var cache = BuildPathCache(path);
 
             void AddRecursive(string dirPathRec, StructureDirectory directory)
             {
@@ -91,7 +95,7 @@ namespace Ajiva.Installer.Core.Installer
                 if (!ToInstall.IsEmpty) continue;
 
                 PresentPercent();
-                Logger("Finished!");
+                //Logger("Finished!");
             }
         }
 
@@ -173,5 +177,38 @@ namespace Ajiva.Installer.Core.Installer
             }
             sync.Dispose();
         }
+
+        private static Dictionary<StructureSpecialFolder, string> BuildPathCache(string installationPath)
+        {
+            Dictionary<StructureSpecialFolder, string> result = new();
+
+            var values = Enum.GetValues(typeof(StructureSpecialFolder)).Cast<StructureSpecialFolder>();
+
+            foreach (var key in values)
+            {
+                string value;
+                if (key >= StructureSpecialFolder.BeginCustomFolders)
+                    switch (key)
+                    {
+                        case StructureSpecialFolder.InstallLocation:
+                            value = installationPath;
+                            break;
+                        case StructureSpecialFolder.None:
+                        case StructureSpecialFolder.BeginCustomFolders:
+                            continue;
+                        default:
+                            throw new InvalidOperationException();
+                    }
+                else
+                    value = Environment.GetFolderPath((Environment.SpecialFolder)(byte)key);
+
+                result.Add(key, value);
+            }
+
+            return result;
+        }
+
+        private static string MakeStructurePath(StructureDirectory directory, IReadOnlyDictionary<StructureSpecialFolder, string> pathCache, string currentRec) =>
+            Path.Combine(directory.ParentFolder == StructureSpecialFolder.None ? currentRec : pathCache[directory.ParentFolder], directory.Name);
     }
 }
