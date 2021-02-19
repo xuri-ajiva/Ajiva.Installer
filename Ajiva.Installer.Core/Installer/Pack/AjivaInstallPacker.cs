@@ -146,6 +146,10 @@ namespace Ajiva.Installer.Core.Installer.Pack
                     {
                         file.File = new PackFileInstallerFile(fs, ref syncLock, pos + file.Pos) {Length = file.Length, Location = file.Name};
                     }
+                    foreach (var directory in dir.Directories)
+                    {
+                        RecFillFiles(directory);
+                    }
                 }
 
                 RecFillFiles(pack.Root!);
