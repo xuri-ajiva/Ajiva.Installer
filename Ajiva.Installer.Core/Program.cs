@@ -15,9 +15,10 @@ namespace Ajiva.Installer.Core
         {
             CancellationTokenSource source = new();
 
-            Action<string> lochPtr = new ConsoleRolBlock(10).WriteNext;
-            var installer = new AjivaInstaller(16,lochPtr );
-            installer.PersentageChanged += d => new ConsoleBlock(1).WriteAt("Installer: " + d, 0);
+            var b1In = new ConsoleBlock(1);
+            Action<string> lochPtr = new ConsoleRolBlock(20).WriteNext;
+            var installer = new AjivaInstaller(16, lochPtr);
+            installer.PersentageChanged += d => b1In.WriteAt("Installer: " + d, 0);
 
             AjivaInstallPacker packer = new AjivaInstallPacker(lochPtr);
 
