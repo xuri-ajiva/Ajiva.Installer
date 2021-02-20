@@ -48,9 +48,14 @@ namespace Ajiva.Installer.Views
         private void Add_OnClick(object? sender, RoutedEventArgs e)
         {
             Dialog ??= new();
-            Dialog.DataContext = new InstallDialogViewModel();
+            Dialog.DataContext = new InstallDialogViewModel() {Path = Config.Current.DefaultPathRef};
 
             Dialog.Show(this);
+        }
+
+        private void Save_OnClick(object? sender, RoutedEventArgs e)
+        {
+            Config.Save();
         }
     }
 }

@@ -11,6 +11,7 @@
         <SolidColorBrush x:Key="ProgressBar" Color="#435FBFE9" />
 
         <SolidColorBrush x:Key="TextBrush" Color="{StaticResource TextColor}" />
+        <SolidColorBrush x:Key="BorderBrush" Color="{StaticResource Border}" />
     </Application.Resources>
     <Application.DataTemplates>
         <local:ViewLocator />

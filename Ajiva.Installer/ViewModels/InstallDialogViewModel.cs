@@ -7,6 +7,7 @@ namespace Ajiva.Installer.ViewModels
         private bool isPopupVisible = false;
         private string url;
         private string key;
+        private string path;
         public bool IsPopupVisible
         {
             get => isPopupVisible;
@@ -21,6 +22,11 @@ namespace Ajiva.Installer.ViewModels
         {
             get => key;
             set => this.RaiseAndSetIfChanged(ref key, value);
+        }
+        public string Path
+        {
+            get => path;
+            set => this.RaiseAndSetIfChanged(ref path, value);
         }
     }
 }

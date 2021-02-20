@@ -32,9 +32,16 @@
                     <views:InstalledList Margin="0" Initialized="InstalledList_Ready" />
                 </Border>
             </TabItem>
-            <TabItem Header="Options" />
+            <TabItem Header="Options">
+                <StackPanel>
+                    <TextBox Text="{Binding DefaultInstallPath}" />
+                    <Button Click="Save_OnClick">Save</Button>
+                </StackPanel>
+
+
+            </TabItem>
         </TabControl>
-        <Button Content="+" Background="#10ffffff" FontSize="40" FontWeight="Bold" Padding="10,0" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" VerticalAlignment="Bottom" Margin="10"  Click="Add_OnClick"/>
+        <Button Content="+" Background="#10ffffff" FontSize="40" FontWeight="Bold" Padding="10,0" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" VerticalAlignment="Bottom" Margin="10" Click="Add_OnClick" />
         <Border IsVisible="{Binding Path=IsPopupVisible}" BorderThickness="5" Background="#A0101010">
             <Border Width="500" Height="500" BorderThickness="5" Background="#A0000000">
                 <Grid RowDefinitions="30,*">

@@ -1,4 +1,5 @@
 ﻿using System.Diagnostics;
+using System.Text.Json.Serialization;
 using ReactiveUI;
 
 namespace Ajiva.Installer.ViewModels
@@ -13,7 +14,6 @@ namespace Ajiva.Installer.ViewModels
         private string iconSrc;
         private string path;
 
-        private readonly ExecutingOptions executingOptions = new();
         public int WidthIcon
         {
             get => widthIcon;
@@ -38,8 +38,15 @@ namespace Ajiva.Installer.ViewModels
         public string IconSrc
         {
             get => iconSrc;
-            set => this.RaiseAndSetIfChanged(ref iconSrc, value);
+            set
+            {
+                this.RaiseAndSetIfChanged(ref iconSrc, value);
+                this.RaisePropertyChanged(nameof(IconDynamic));
+            }
         }
+
+        [JsonIgnore]
+        public string IconDynamic => iconSrc.ReplaceDynamic(this);
 
         public string Path
         {
@@ -47,7 +54,7 @@ namespace Ajiva.Installer.ViewModels
             set => this.RaiseAndSetIfChanged(ref path, value);
         }
 
-        public ExecutingOptions ExecutingOptions => executingOptions;
+        public ExecutingOptions ExecutingOptions { get; set; } = new();
 
         public double Progress
         {
