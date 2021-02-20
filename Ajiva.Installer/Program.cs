@@ -57,5 +57,32 @@ namespace Ajiva.Installer
 
             run.Proc.Start();
         }
+
+        public static void StartInstall(Uri url, string path)
+        {
+            if (!url.IsFile)
+            {
+                return;
+            }
+            InstalledInfo newItem = new()
+            {
+                Path = path,
+                Progress = 0
+            };
+
+            Config.InstalledPrograms.Add(newItem);
+            var info = Core.Program.Install(new() {PackPath = url.LocalPath, InstallPath = path}, false, d =>
+            {
+                newItem.Progress = d >= 1 ? 0 : d * 100;
+            });
+
+            newItem.Description = info.Info.Description;
+            newItem.Name = info.Info.Name;
+            newItem.ExecutingOptions.Args = info.Info.Arguments;
+            newItem.ExecutingOptions.Executable = Path.Combine(nameof(newItem.Path).ToDynamic(), info.Root.Name, info.Info.Executable);
+            newItem.ExecutingOptions.WorkDirectory = Path.GetDirectoryName(newItem.ExecutingOptions.Executable);
+
+            Config.Save();
+        }
     }
 }
