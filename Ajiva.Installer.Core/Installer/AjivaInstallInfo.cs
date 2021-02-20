@@ -5,12 +5,9 @@ using Ajiva.Installer.Core.Installer.Pack;
 
 namespace Ajiva.Installer.Core.Installer
 {
-    internal class AjivaInstallInfo
+    public class AjivaInstallInfo
     {
-        public string Name { get; set; }
-        public string Description { get; set; }
-        public string Executabe { get; set; }
-        public string Arguments { get; set; }
+        public InstallerInfo Info;
 
         public StructureDirectory Root { get; set; } = new();
     }

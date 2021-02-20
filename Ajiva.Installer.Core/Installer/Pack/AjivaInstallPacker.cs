@@ -102,10 +102,7 @@ namespace Ajiva.Installer.Core.Installer.Pack
 
             var info = new AjivaInstallInfo
             {
-                Arguments = head.Arguments,
-                Name = head.Name,
-                Description = head.Description,
-                Executabe = head.Executable,
+                Info = head.Information,
             };
 
             pack.ReadStructure();

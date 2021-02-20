@@ -34,7 +34,7 @@ namespace Ajiva.Installer.Core.Installer.Pack
         {
             if (Header == null) throw new InvalidOperationException();
             if (Root != null) throw new InvalidOperationException();
-            Root = new(StructureSpecialFolder.InstallLocation, Header.Name);
+            Root = new(StructureSpecialFolder.InstallLocation, "");
             Root.ReadFrom(Data);
         }
     }

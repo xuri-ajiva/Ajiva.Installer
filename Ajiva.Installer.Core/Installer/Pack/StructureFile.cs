@@ -3,7 +3,7 @@ using Ajiva.Installer.Core.Installer.FileTypes;
 
 namespace Ajiva.Installer.Core.Installer.Pack
 {
-    internal class StructureFile : IWritable
+    public class StructureFile : IWritable
     {
         public StructureFile(StructureDirectory parent, FileInfo fileInfo, ref long position)
         {

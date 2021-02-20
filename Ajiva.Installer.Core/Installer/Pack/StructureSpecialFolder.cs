@@ -1,6 +1,6 @@
 ﻿namespace Ajiva.Installer.Core.Installer.Pack
 {
-    internal enum StructureSpecialFolder : byte
+    public enum StructureSpecialFolder : byte
     {
         None = 0xFE,
         InstallLocation = 0xFD,

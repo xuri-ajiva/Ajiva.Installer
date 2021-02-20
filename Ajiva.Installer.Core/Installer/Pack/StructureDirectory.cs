@@ -1,8 +1,9 @@
-﻿using System.IO;
+﻿using System;
+using System.IO;
 
 namespace Ajiva.Installer.Core.Installer.Pack
 {
-    internal class StructureDirectory : IWritable
+    public class StructureDirectory : IWritable
     {
         public string Name { get; set; }
         public StructureSpecialFolder ParentFolder { get; set; } //change to custom enum
@@ -29,8 +30,8 @@ namespace Ajiva.Installer.Core.Installer.Pack
         }
 
         public StructureDirectory? Parent { get; }
-        public StructureDirectory[] Directories { get; set; }
-        public StructureFile[] Files { get; set; }
+        public StructureDirectory[] Directories = Array.Empty<StructureDirectory>();
+        public StructureFile[] Files = Array.Empty<StructureFile>();
 
         /// <inheritdoc />
         public void WriteTo(Stream stream)

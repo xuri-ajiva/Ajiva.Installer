@@ -2,10 +2,10 @@
 
 namespace Ajiva.Installer.Core.Installer.Pack
 {
-    public record PackHead(long FilesCount, int HeadLength, string Name, string Description, string Executable, string Arguments)
+    public record PackHead(long FilesCount, int HeadLength, InstallerInfo Information)
     {
         [JsonConstructor]
-        public PackHead() : this(default!, default!, default!, default!, default!, default!)
+        public PackHead() : this(default!, default!, default!)
         {
         }
     }
