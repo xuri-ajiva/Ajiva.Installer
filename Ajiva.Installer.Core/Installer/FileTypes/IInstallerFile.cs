@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 namespace Ajiva.Installer.Core.Installer.FileTypes
 {
-    internal interface IInstallerFile
+    public interface IInstallerFile
     {
         public string Location { get; init; }
 
