@@ -5,29 +5,31 @@ using Ajiva.Installer.Core.Installer.FileTypes;
 
 namespace Ajiva.Installer.Core.Installer.Pack
 {
-    internal class AjivaInstallPacker
+    public class AjivaInstallPacker
     {
         private readonly Action<string> logger;
         private const string PackageExtension = ".inst_pack";
 
-        public void Pack(string path, string name)
+        public void BuildPack(string path, InstallerInfo info)
         {
             path = Path.GetFullPath(path);
-            var @out = Path.Combine(path, "..", name + PackageExtension);
+            var @out = Path.Combine(path, "..", info.Name + PackageExtension);
             if (!OpenFile(@out, out FileStream pack)) return;
 
             var di = new DirectoryInfo(path);
 
-            var strDir = new StructureDirectory(StructureSpecialFolder.InstallLocation, di.Name);
+            var root = new StructureDirectory(StructureSpecialFolder.InstallLocation, di.Name);
 
             long posRef = 0;
-            BuildTreeRecursive(di, ref strDir, ref posRef);
+            BuildTreeRecursive(di, ref root, ref posRef);
+            Array.Resize(ref root.Directories, root.Directories.Length + 1);
+            root.Directories[^1] = new(root, "information");
 
-            WritePack(path, pack, strDir);
+            WritePack(path, pack, root, info, posRef);
             LogHelper.Log($"Finished: {@out}");
         }
 
-        private void WritePack(string path, Stream stream, StructureDirectory root)
+        private void WritePack(string path, Stream stream, StructureDirectory root, InstallerInfo info, double length)
         {
             var pack = new PackBuilder();
 
@@ -35,9 +37,11 @@ namespace Ajiva.Installer.Core.Installer.Pack
 
             pack.BeginType(stream);
 
-            pack.WriteHeader(new(0, (int)pack.StructureLength, "aaa", "vvv", "bbb", "ddd"));
+            pack.WriteHeader(new(0, (int)pack.StructureLength, info));
 
             pack.WriteStructure();
+
+            var basePos = stream.Position;
 
             void WriteFilesRec(string dirPathRec, StructureDirectory directory)
             {
@@ -48,6 +52,7 @@ namespace Ajiva.Installer.Core.Installer.Pack
                     try
                     {
                         pack.WriteFile(dirPathRec, file);
+                        logger($"[{(stream.Position - basePos) / length:0.000000%}] File: {file.Name}");
                     }
                     catch (Exception e)
                     {
