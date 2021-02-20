@@ -1,11 +1,10 @@
+using System;
 using System.Linq;
 using Ajiva.Installer.ViewModels;
 using Avalonia;
-using Avalonia.Collections;
 using Avalonia.Controls;
 using Avalonia.Interactivity;
 using Avalonia.Markup.Xaml;
-using Avalonia.Metadata;
 
 namespace Ajiva.Installer
 {
@@ -37,11 +36,33 @@ namespace Ajiva.Installer
         {
             Pages.SelectedIndex = (Pages.SelectedIndex + 1) % Pages.Items.Cast<object>().Count();
         }
-    }
 
-    public class ContendTemp
-    {
-        [Content]
-        public IControl Main { get; set; } = null!;
+        private void Finish_OnClick(object? sender, RoutedEventArgs e)
+        {
+            if (string.IsNullOrEmpty(DataContextData.Path))
+            {
+                Back_OnClick(null, null!);
+                return;
+            }
+
+            var url = new Uri(DataContextData.Url);
+
+            this.Get<Button>("FFinish").IsEnabled = false;
+            this.Get<Button>("FBack").IsEnabled = false;
+            Program.StartInstall(url, DataContextData.Path);
+            Close(true);
+        }
+
+        private void Back_OnClick(object? sender, RoutedEventArgs e)
+        {
+            Pages.SelectedIndex = (Pages.SelectedIndex - 1) % Pages.Items.Cast<object>().Count();
+        }
+
+        private async void OpenFolder_OnClick(object? sender, RoutedEventArgs e)
+        {
+            OpenFolderDialog dialog = new();
+            var path = await dialog.ShowAsync(this);
+            DataContextData.Path = path;
+        }
     }
 }
