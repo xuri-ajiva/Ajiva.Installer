@@ -22,31 +22,32 @@ namespace Ajiva.Installer.ViewModels
             return false;
         }
 
+        private const string SpecialSing = "$";
+        public static string ToDynamic(this string src) => SpecialSing + src + SpecialSing;
+
         public static string ReplaceDynamic(this string src, object obj)
         {
             if (string.IsNullOrEmpty(src)) return "";
 
-            const string specialSing = "$";
-
             var pos = 0;
             while (true)
             {
-                var a = src.IndexOf(specialSing, pos, StringComparison.InvariantCultureIgnoreCase);
+                var a = src.IndexOf(SpecialSing, pos, StringComparison.InvariantCultureIgnoreCase);
                 if (a == -1) break;
-                var b = src.IndexOf(specialSing, a + specialSing.Length, StringComparison.InvariantCultureIgnoreCase);
+                var b = src.IndexOf(SpecialSing, a + SpecialSing.Length, StringComparison.InvariantCultureIgnoreCase);
 
                 if (b == -1) break;
 
-                var param = src.Substring(a + specialSing.Length, b - a - specialSing.Length);
+                var param = src.Substring(a + SpecialSing.Length, b - a - SpecialSing.Length);
                 if (!obj.TryGetPropValue<string>(param, out var value)) continue;
 
                 pos += a - pos + value.Length;
-                src = src.Replace( /*param*/ $"{specialSing}{param}{specialSing}", value, StringComparison.InvariantCulture);
+                src = src.Replace( /*param*/ $"{SpecialSing}{param}{SpecialSing}", value, StringComparison.InvariantCulture);
 
                 // pos += b - pos + 1;
             }
 
-            return src.Replace(specialSing, "");
+            return src.Replace(SpecialSing, "");
         }
     }
 }
