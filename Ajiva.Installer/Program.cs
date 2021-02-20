@@ -1,10 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics;
+using System.IO;
 using System.Linq;
+using System.Runtime.InteropServices;
 using Ajiva.Installer.ViewModels;
 using Avalonia;
-using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.ReactiveUI;
 
 namespace Ajiva.Installer
@@ -16,6 +16,8 @@ namespace Ajiva.Installer
         // yet and stuff might break.
         public static int Main(string[] args)
         {
+            Config.Load();
+
             return BuildAvaloniaApp()
                 .StartWithClassicDesktopLifetime(args);
         }
