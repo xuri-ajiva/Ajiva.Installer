@@ -1,5 +1,8 @@
 ﻿using System;
+using System.IO;
 using System.Net;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 using System.Threading;
 using System.Threading.Tasks;
 using Ajiva.Installer.Core.ConsoleExt;
@@ -9,42 +12,82 @@ using Ajiva.Installer.Core.Net;
 
 namespace Ajiva.Installer.Core
 {
-    internal static class Program
+    public static class Program
     {
-        private static void Main(string[] args)
+        private static readonly Action<string> LockPtr = new ConsoleRolBlock(20).WriteNext;
+        private static readonly ConsoleBlock B1Ln = new(1);
+        private static readonly Action<string> B1In = s => B1Ln.WriteAt(s, 0);
+
+        public static readonly AjivaInstaller Installer = new(16, LockPtr);
+
+        private static StreamWriter log;
+
+        private static void OpenLogFile()
         {
-            CancellationTokenSource source = new();
+            Directory.CreateDirectory("Logs");
+            const string logExt = ".log";
+            var logName = $"Logs/log-{DateTime.Now:yyyy-mm-dd-hh-ss}";
+            while (File.Exists(logName + logExt)) logName += "(2)";
+            log = new(File.Open(logName + logExt, FileMode.OpenOrCreate, FileAccess.Write));
+        }
 
-            var b1In = new ConsoleBlock(1);
-            Action<string> lochPtr = new ConsoleRolBlock(20).WriteNext;
-            var installer = new AjivaInstaller(16, lochPtr);
-            installer.PercentageChanged += d => b1In.WriteAt("Installer: " + d, 0);
+        private static readonly AjivaInstallPacker Packer = new(str =>
+        {
+            LockPtr(str);
+            log.WriteLine(str);
+        });
 
-            AjivaInstallPacker packer = new AjivaInstallPacker(lochPtr);
+        public static AjivaInstallInfo Install(RunInfo info, bool waitForFinish, Action<double> percentageChanged)
+        {
+            var installInfo = Packer.FromPack(info.PackPath);
 
-            void CopyExample()
+            Installer.InstallAsync(installInfo, info.InstallPath, percentageChanged);
+
+            if (!waitForFinish) return installInfo;
+
+            while (!Installer.IsFinished)
             {
-                //var installInfo = AjivaInstallInfo.DirCopy(LogHelper.GetInput("Path"));
-
-                //installer.InstallAsync(installInfo, "../cpy");
-                //installInfo = null;
+                Thread.Sleep(10);
             }
+            return installInfo;
+        }
+
+        public static void Main(string[] args)
+        {
+            if (args.Length > 0)
+            {
+                try
+                {
+                    var info = JsonSerializer.Deserialize<RunInfo>(args[0])!;
+
+                    Install(info, true, d => B1In("Installer: " + d));
+
+                    Environment.Exit(0);
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine(e);
+                    throw;
+                }
+            }
+
+            CancellationTokenSource source = new();
 
             void PackSome()
             {
-                packer.Pack(LogHelper.GetInput("Path"), LogHelper.GetInput("Name"));
+                Packer.BuildPack(LogHelper.GetInput("Path"), new InstallerInfo(LogHelper.GetInput("Name"), LogHelper.GetInput("Description"), LogHelper.GetInput("Executable"), LogHelper.GetInput("Arguments")));
             }
 
             void FromSomePack()
             {
-                var installInfo = packer.FromPack(LogHelper.GetInput("Path"));
+                var installInfo = Packer.FromPack(LogHelper.GetInput("Path"));
 
-                installer.InstallAsync(installInfo, "../cpy");
+                Installer.InstallAsync(installInfo, "../cpy", d => B1In("Installer: " + d));
                 installInfo = null;
             }
 
             ConsoleMenu menu = new();
-            menu.ShowMenu("Select Action: ", new ConsoleMenuItem("Copy: ", CopyExample), new ConsoleMenuItem("Pack: ", PackSome), new ConsoleMenuItem("FromPack: ", FromSomePack));
+            menu.ShowMenu("Select Action: ", new ConsoleMenuItem("Pack: ", PackSome), new ConsoleMenuItem("FromPack: ", FromSomePack));
 
             //ServerTest(source);
 
@@ -118,5 +161,10 @@ namespace Ajiva.Installer.Core
             StartOneClient();
             StartOneClient();
         }
+    }
+    public class RunInfo
+    {
+        public string PackPath { get; set; }
+        public string InstallPath { get; set; }
     }
 }
