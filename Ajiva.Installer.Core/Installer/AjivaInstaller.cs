@@ -8,10 +8,11 @@ using Ajiva.Installer.Core.Installer.Pack;
 
 namespace Ajiva.Installer.Core.Installer
 {
-    internal class AjivaInstaller : IDisposable
+    public class AjivaInstaller : IDisposable
     {
-        public event Action<double>? PercentageChanged;
+        //public event Action<double>? PercentageChanged;
         public event Action<string>? InfoChanged;
+        public readonly int WorkersCount;
         public Action<string> Logger;
 
         public long TotalBytes;
@@ -19,10 +20,10 @@ namespace Ajiva.Installer.Core.Installer
         public long TotalFiles;
         public long DoneFiles;
 
-        public void InstallAsync(AjivaInstallInfo installInfo, string path)
+        public void InstallAsync(AjivaInstallInfo installInfo, string path, Action<double> percentageChanged)
         {
-            Logger("Installing:  " + installInfo.Name);
-            Logger("Description: " + installInfo.Description);
+            Logger("Installing:  " + installInfo.Info.Name);
+            Logger("Description: " + installInfo.Info.Description);
 
             path = Path.GetFullPath(path);
 
@@ -42,12 +43,11 @@ namespace Ajiva.Installer.Core.Installer
                     Logger($"Creating Directory: {directory.Name}");
                 }
 
-
                 foreach (var infoFile in directory.Files)
                 {
                     bytes += infoFile.Length;
                     files++;
-                    ToInstall.Enqueue(new(path, dirPathRec, infoFile.File!));
+                    ToInstall.Enqueue(new(percentageChanged, path, dirPathRec, infoFile.File!));
                 }
                 foreach (var structureDirectory in directory.Directories)
                 {
@@ -59,6 +59,7 @@ namespace Ajiva.Installer.Core.Installer
 
             Interlocked.Add(ref TotalBytes, bytes);
             Interlocked.Add(ref TotalFiles, files);
+            Finished = 0;
             sync.Release((int)files);
         }
 
@@ -70,6 +71,7 @@ namespace Ajiva.Installer.Core.Installer
 
         public AjivaInstaller(int workersCount, Action<string> logger)
         {
+            WorkersCount = workersCount;
             Logger = logger;
             workers = new Thread[workersCount];
             for (var i = 0; i < workersCount; i++)
@@ -87,11 +89,12 @@ namespace Ajiva.Installer.Core.Installer
             {
                 sync.WaitOne();
 
+                InstallerData? inst = null;
                 while (true)
                 {
                     if (ToInstall.IsEmpty) break;
 
-                    if (!ToInstall.TryDequeue(out var inst)) continue;
+                    if (!ToInstall.TryDequeue(out inst)) continue;
 
                     WorkFile(inst);
                     break;
@@ -99,10 +102,15 @@ namespace Ajiva.Installer.Core.Installer
 
                 if (!ToInstall.IsEmpty) continue;
 
-                PresentPercent();
-                //Logger("Finished!");
+                if (inst is not null) PresentPercent(inst.PercentageChanged);
+
+                Interlocked.Increment(ref Finished);
             }
         }
+
+        public int Finished;
+
+        public bool IsFinished => Finished == WorkersCount;
 
         private void WorkFile(InstallerData result)
         {
@@ -130,7 +138,7 @@ namespace Ajiva.Installer.Core.Installer
 
                 if (pos % saveInterval == 0)
                 {
-                    PresentsChange();
+                    PresentsChange(result.PercentageChanged);
                     fs.Flush();
                 }
                 Interlocked.Add(ref DoneBytes, data.Length);
@@ -138,7 +146,7 @@ namespace Ajiva.Installer.Core.Installer
 
             fs.Flush();
             fs.Close();
-            if (pos < saveInterval) PresentsChange();
+            if (pos < saveInterval) PresentsChange(result.PercentageChanged);
 
             Interlocked.Increment(ref DoneFiles);
         }
@@ -153,7 +161,7 @@ namespace Ajiva.Installer.Core.Installer
         private DateTime nextPresent = DateTime.MinValue;
         private readonly object nextPresentLock = new();
 
-        private void PresentsChange()
+        private void PresentsChange(Action<double> resultPercentageChanged)
         {
             lock (nextPresentLock)
             {
@@ -163,13 +171,13 @@ namespace Ajiva.Installer.Core.Installer
                 nextPresent = DateTime.Now.AddMilliseconds(50);
             }
 
-            PresentPercent();
+            PresentPercent(resultPercentageChanged);
         }
 
-        private void PresentPercent()
+        private void PresentPercent(Action<double> resultPercentageChanged)
         {
             var percentage = (double)DoneBytes / TotalBytes;
-            PercentageChanged?.Invoke(percentage);
+            resultPercentageChanged?.Invoke(percentage);
         }
 
         /// <inheritdoc />
