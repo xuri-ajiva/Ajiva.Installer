@@ -8,7 +8,8 @@
         x:Class="Ajiva.Installer.InstallDialog"
         Title="InstallDialog"
         MinWidth="800" MaxWidth="1"
-        MinHeight="600" MaxHeight="1">
+        MinHeight="600" MaxHeight="1"
+        Background="#90000000" TransparencyLevelHint="Transparent">
 
 
     <Design.DataContext>
@@ -25,47 +26,67 @@
             <Setter Property="Margin" Value="0 0 0 0" />
             <Setter Property="Padding" Value="10 0" />
         </Style>
+
+        <Style Selector="Button.next">
+            <Setter Property="HorizontalAlignment" Value="Right" />
+            <Setter Property="VerticalAlignment" Value="Bottom" />
+            <Setter Property="Content" Value="Next" />
+        </Style>
+        <Style Selector="Button.back">
+            <Setter Property="HorizontalAlignment" Value="Right" />
+            <Setter Property="VerticalAlignment" Value="Bottom" />
+            <Setter Property="Content" Value="Back" />
+            <Setter Property="Margin" Value="0,0,60,0" />
+        </Style>
+
+        <Style Selector="Border.border">
+            <Setter Property="BorderBrush" Value="{StaticResource BorderBrush}" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="CornerRadius" Value="3" />
+            <Setter Property="Padding" Value="10" />
+        </Style>
     </Window.Styles>
 
     <Grid>
         <TabControl TabStripPlacement="Left" Margin="0,0,-6,0" SelectedIndex="0" Name="Pages">
-
-            <TabControl.ContentTemplate>
-                <DataTemplate DataType="installer:ContendTemp">
-                    <Border BorderBrush="{StaticResource Border}" BorderThickness="1" Padding="10" CornerRadius="3">
-                        <Grid>
-                            <Border Child="{Binding Main}" />
-                            <Button VerticalAlignment="Bottom" HorizontalAlignment="Right" Content="Next" Click="Next_OnClick" />
-                        </Grid>
-                    </Border>
-                </DataTemplate>
-            </TabControl.ContentTemplate>
             <TabItem Header="Start" IsEnabled="True">
-                <installer:ContendTemp>
-                  <StackPanel DataContext="{Binding $parent[3].DataContext}">
+                <Border Classes="border">
+                    <Grid>
+                        <StackPanel Margin="50">
+                            <TextBlock Text="Url" HorizontalAlignment="Center" Margin="0,20" />
+                            <TextBox Text="{Binding Path=Url,Mode= TwoWay}" MaxWidth="400" />
 
-                    <StackPanel Margin="50">
-                      <TextBlock Text="Url"   HorizontalAlignment="Center" Margin="0,20"/>
-                      <TextBox Text="{Binding Path=Url,Mode= TwoWay}" MaxWidth="400"/>
+                            <TextBlock Text="Key" HorizontalAlignment="Center" Margin="0,20" />
+                            <TextBox Text="{Binding Path=Key,Mode= TwoWay}" MaxWidth="400" />
+                        </StackPanel>
 
-                      <TextBlock Text="Key" HorizontalAlignment="Center" Margin="0,20"/>
-                      <TextBox Text="{Binding Path=Key,Mode= TwoWay}" MaxWidth="400"/>
-                    </StackPanel>
-                    
-  
-       
-                  </StackPanel>
-                </installer:ContendTemp>
+                        <Button Classes="next" Click="Next_OnClick" />
+                    </Grid>
+                </Border>
             </TabItem>
             <TabItem Header="Options" IsEnabled="True">
-                <installer:ContendTemp>
-                        <Button />
-                </installer:ContendTemp>
+                <Border Classes="border">
+                    <Grid>
+                        <StackPanel Margin="50">
+                            <TextBlock Text="Path" HorizontalAlignment="Center" Margin="0,20" />
+                            <DockPanel MaxWidth="460">
+                                <TextBox Text="{Binding Path=Path,Mode= TwoWay}" Width="400" />
+                                <Button HorizontalAlignment="Right" Click="OpenFolder_OnClick">Open</Button>
+                            </DockPanel>
+                        </StackPanel>
+                        <Button Classes="back" Click="Back_OnClick" />
+                        <Button Classes="next" Click="Next_OnClick" />
+                    </Grid>
+                </Border>
             </TabItem>
             <TabItem Header="Install" IsEnabled="True">
-                <installer:ContendTemp>
-                        <Button />
-                </installer:ContendTemp>
+                <Border Classes="border">
+                    <Grid>
+                        <TextBlock Name="FLog" />
+                        <Button Classes="back" Click="Back_OnClick" Name="FBack" />
+                        <Button Classes="next" Content="Finish" Click="Finish_OnClick" Name="FFinish" />
+                    </Grid>
+                </Border>
             </TabItem>
         </TabControl>
         <Border IsVisible="{Binding Path=IsPopupVisible}" BorderThickness="5" Background="#A0101010">
