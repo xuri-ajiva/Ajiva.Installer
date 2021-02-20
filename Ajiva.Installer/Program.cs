@@ -27,12 +27,20 @@ namespace Ajiva.Installer
                 .LogToTrace()
                 .UseReactiveUI();
 
-        private static List<RunningInfo> Running = new();
+        private static readonly List<RunningInfo> Running = new();
+
+        [DllImport("user32.dll", SetLastError = true)]
+        private static extern bool SetForegroundWindow(IntPtr hWnd);
 
         public static void StartInstalled(InstalledInfo installedInfo)
         {
             Running.RemoveAll(x => !x.Running);
-            if (Running.Any(x => x.Info == installedInfo)) return;
+            if (Running.FirstOrDefault(x => x.Info == installedInfo) is { } first)
+            {
+                SetForegroundWindow(first.Proc.MainWindowHandle);
+
+                return;
+            }
 
             var run = new RunningInfo
             {
