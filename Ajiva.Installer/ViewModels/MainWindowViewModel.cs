@@ -11,24 +11,16 @@ namespace Ajiva.Installer.ViewModels
     {
         private bool isPopupVisible = false;
 
-        public ObservableCollection<InstalledInfo> Items { get; } = new(new[]
-        {
-            new InstalledInfo
-            {
-                Description = "Walk the dog", Name = "St", IconSrc = @"./avalonia-logo.ico", ExecutingOptions =
-                {
-                    Args = "/c echo Description && timeout 10",
-                    Executable = "cmd.exe"
-                }
-            },
-            new InstalledInfo {Description = "Buy some milk", Name = "Main"},
-            new InstalledInfo {Description = "Learn Avalonia", Name = "Factorio"},
-        });
-
+        public ObservableCollection<InstalledInfo> Items => Config.InstalledPrograms;
         public bool IsPopupVisible
         {
             get => isPopupVisible;
             set => this.RaiseAndSetIfChanged(ref isPopupVisible, value);
+        }
+        public string DefaultInstallPath
+        {
+            get => Config.Current.DefaultPathRef;
+            set => this.RaiseAndSetIfChanged(ref Config.Current.DefaultPathRef, value);
         }
     }
 }
