@@ -58,31 +58,52 @@ namespace Ajiva.Installer
             run.Proc.Start();
         }
 
-        public static void StartInstall(Uri url, string path)
+        public static void StartInstall(InstalledInfo installed, bool addToInstalled)
         {
-            if (!url.IsFile)
+            if (addToInstalled)
+                Config.InstalledPrograms.Add(installed);
+            Config.Save();
+
+            if (installed.Source is null) throw new ArgumentException("Source is null!", nameof(installed.Source), null);
+            if (installed.Path is null) throw new ArgumentException("Path is null!", nameof(installed.Path), null);
+
+            installed.AvailableAction = AvailableAction.Installing;
+
+            if (!installed.Source.IsFile)
             {
+                //TODO: download or something!
                 return;
             }
-            InstalledInfo newItem = new()
+
+            ShowWindow(GetConsoleWindow(), SW_SHOW);
+            var info = AjivaInstaller.InstallBlank(Console.WriteLine, new() {PackPath = installed.Source.LocalPath, InstallPath = installed.Path}, false, d =>
             {
-                Path = path,
-                Progress = 0
-            };
+                if (d >= 1)
+                {
+                    Task.Run(async () =>
+                    {
+                        await Task.Delay(1000);
+                        await Dispatcher.UIThread.InvokeAsync(() =>
+                        {
+                            installed.AvailableAction = AvailableAction.Start;
+                            Config.Save();
+                        });
+                        await Task.Delay(2000);
+                        ShowWindow(GetConsoleWindow(), SW_HIDE);
+                    });
+                    installed.Progress = 0;
+                }
+                else
+                    installed.Progress = d * 100;
+            }, 64);
 
-            Config.InstalledPrograms.Add(newItem);
-            var info = Core.Program.Install(new() {PackPath = url.LocalPath, InstallPath = path}, false, d =>
-            {
-                newItem.Progress = d >= 1 ? 0 : d * 100;
-            });
-
-            newItem.Description = info.Info.Description;
-            newItem.Name = info.Info.Name;
-            newItem.ExecutingOptions.Args = info.Info.Arguments;
-            newItem.ExecutingOptions.Executable = Path.Combine(nameof(newItem.Path).ToDynamic(), info.Root.Name, info.Info.Executable);
-            newItem.ExecutingOptions.WorkDirectory = Path.GetDirectoryName(newItem.ExecutingOptions.Executable);
-
-            Config.Save();
+            //todo add icon
+            installed.Description ??= info.Info.Description;
+            installed.Name ??= info.Info.Name;
+            installed.ExecutingOptions ??= new();
+            installed.ExecutingOptions.Args ??= info.Info.Arguments;
+            installed.ExecutingOptions.Executable ??= Path.Combine(nameof(installed.Path).ToDynamic(), info.Root.Name, info.Info.Executable);
+            installed.ExecutingOptions.WorkDirectory ??= Path.GetDirectoryName(installed.ExecutingOptions.Executable)!;
         }
     }
 }
