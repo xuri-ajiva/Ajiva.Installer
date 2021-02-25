@@ -1,4 +1,8 @@
 using System;
+using System.ComponentModel;
+using System.Linq;
+using System.Threading.Tasks;
+using Ajiva.Installer.Helpers;
 using Ajiva.Installer.ViewModels;
 using Avalonia;
 using Avalonia.Controls;
@@ -56,6 +60,29 @@ namespace Ajiva.Installer.Views
         private void Save_OnClick(object? sender, RoutedEventArgs e)
         {
             Config.Save();
+        }
+
+        private void Window_OnClosing(object? sender, CancelEventArgs e)
+        {
+            RunHelper.Running.RemoveAll(x=> !x.Running);
+            foreach (var runningInfo in RunHelper.Running)
+            {
+                Task.Run(() =>
+                {
+                    Interop.SetForegroundWindow(runningInfo.Proc.MainWindowHandle);
+                    for (var i = 0; i < 2; i++)
+                    {
+                        Interop.FlashWindow(runningInfo.Proc.MainWindowHandle, false);
+                        Task.Delay(1000);
+                        Interop.FlashWindow(runningInfo.Proc.MainWindowHandle, true);
+                        Task.Delay(1000);
+                    }
+                });
+            }
+            if (!RunHelper.Running.Any()) return;
+
+            Interop.FlashWindow(PlatformImpl.Handle.Handle, false);
+            e.Cancel = true;
         }
     }
 }

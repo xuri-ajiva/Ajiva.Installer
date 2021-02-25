@@ -9,7 +9,9 @@
         Icon="/Assets/avalonia-logo.ico"
         Title="Ajiva.Installer"
         MinWidth="600" MinHeight="550" Width="800" Height="450"
-        TransparencyLevelHint="Blur" Background="#A0000000">
+        TransparencyLevelHint="Blur" Background="#A0000000"
+        Closing="Window_OnClosing"
+        >
     <Design.DataContext>
         <vm:MainWindowViewModel />
     </Design.DataContext>
