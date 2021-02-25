@@ -36,8 +36,8 @@
                                     <TextBlock FontSize="30" Grid.Column="1" Grid.Row="0" Text="{Binding Name}" />
                                     <TextBlock Grid.Column="1" Grid.Row="1" Text="{Binding Description}" />
                                     <DockPanel Grid.Column="2" Grid.Row="0" Grid.RowSpan="2" Height="50" Margin="5" HorizontalAlignment="Right">
-                                        <Button Height="50" Margin="5" HorizontalAlignment="Right" Click="Start_Click">
-                                            <TextBlock Width="80" Text="Start" TextAlignment="Center" VerticalAlignment="Center" />
+                                        <Button Height="50" Margin="5" HorizontalAlignment="Right" Click="Invoke_Click">
+                                            <TextBlock Width="80" Text="{Binding AvailableAction}" TextAlignment="Center" VerticalAlignment="Center" />
                                         </Button>
                                         <Button Height="50" Margin="5" HorizontalAlignment="Right" Click="Options_Click">
                                             <TextBlock Width="80" Text="Options" TextAlignment="Center" VerticalAlignment="Center" />
