@@ -187,6 +187,23 @@ namespace Ajiva.Installer.Core.Installer
             GC.SuppressFinalize(this);
         }
 
+        #region Static
+
+        public static AjivaInstallInfo InstallBlank(Action<string> logger, RunInfo info, bool waitForFinish, Action<double> percentageChanged, int workersCount)
+        {
+            var installInfo = new AjivaInstallPacker(logger).FromPack(info.PackPath);
+            var inst = new AjivaInstaller(workersCount, logger);
+            inst.InstallAsync(installInfo, info.InstallPath, percentageChanged);
+
+            if (!waitForFinish) return installInfo;
+
+            while (!inst.IsFinished)
+            {
+                Thread.Sleep(10);
+            }
+            return installInfo;
+        }
+
         private static Dictionary<StructureSpecialFolder, string> BuildPathCache(string installationPath)
         {
             Dictionary<StructureSpecialFolder, string> result = new();
@@ -219,5 +236,7 @@ namespace Ajiva.Installer.Core.Installer
 
         private static string MakeStructurePath(StructureDirectory directory, IReadOnlyDictionary<StructureSpecialFolder, string> pathCache, string currentRec) =>
             Path.Combine(directory.ParentFolder == StructureSpecialFolder.None ? currentRec : pathCache[directory.ParentFolder], directory.Name);
+
+        #endregion
     }
 }
