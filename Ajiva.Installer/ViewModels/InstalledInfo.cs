@@ -1,4 +1,5 @@
-﻿using System.Diagnostics;
+﻿using System;
+using System.Diagnostics;
 using System.Text.Json.Serialization;
 using ReactiveUI;
 
@@ -35,17 +36,17 @@ namespace Ajiva.Installer.ViewModels
             set => this.RaiseAndSetIfChanged(ref widthText, value);
         }
 
-        public string Name
+        public string? Name
         {
             get => name;
             set => this.RaiseAndSetIfChanged(ref name, value);
         }
-        public string Description
+        public string? Description
         {
             get => description;
             set => this.RaiseAndSetIfChanged(ref description, value);
         }
-        public string IconSrc
+        public string? IconSrc
         {
             get => iconSrc;
             set
@@ -56,15 +57,15 @@ namespace Ajiva.Installer.ViewModels
         }
 
         [JsonIgnore]
-        public string IconDynamic => iconSrc.ReplaceDynamic(this);
+        public string? IconDynamic => iconSrc.ReplaceDynamic(this);
 
-        public string Path
+        public string? Path
         {
             get => path;
             set => this.RaiseAndSetIfChanged(ref path, value);
         }
 
-        public ExecutingOptions ExecutingOptions { get; set; } = new();
+        public ExecutingOptions? ExecutingOptions { get; set; } = new();
 
         public double Progress
         {

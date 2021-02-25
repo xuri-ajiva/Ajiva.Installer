@@ -2,8 +2,8 @@
 {
     public class ExecutingOptions
     {
-        public string Executable { get; set; }
-        public string WorkDirectory { get; set; }
-        public string Args { get; set; }
+        public string? Executable { get; set; }
+        public string? WorkDirectory { get; set; }
+        public string? Args { get; set; }
     }
 }
