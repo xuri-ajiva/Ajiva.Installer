@@ -6,13 +6,23 @@ namespace Ajiva.Installer.ViewModels
 {
     public class InstalledInfo : ReactiveObject
     {
-        private double progress;
+        private double progress = 0;
         private int widthIcon = 60;
         private int widthText = 300;
-        private string name;
-        private string description;
-        private string iconSrc;
-        private string path;
+        private string? name;
+        private string? description;
+        private string? iconSrc;
+        private string? path;
+        private AvailableAction availableAction;
+        private Uri? source;
+        
+        public Guid UniqueIdentifier { get; set; }
+
+        public AvailableAction AvailableAction
+        {
+            get => availableAction;
+            set => this.RaiseAndSetIfChanged(ref availableAction, value);
+        }
 
         public int WidthIcon
         {
