@@ -51,9 +51,10 @@ namespace Ajiva.Installer.Views
 
         private void Add_OnClick(object? sender, RoutedEventArgs e)
         {
-            Dialog ??= new();
-            Dialog.DataContext = new InstallDialogViewModel() {Path = Config.Current.DefaultPathRef};
-
+            if ((Dialog is not null && Dialog.IsVisible) || (Dialog == null))
+                Dialog = new();
+            
+            Dialog.DataContext = new InstallDialogViewModel {Path = Config.Current.DefaultPathRef};
             Dialog.Show(this);
         }
 
