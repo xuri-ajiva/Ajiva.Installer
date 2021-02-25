@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Collections.Specialized;
 using System.IO;
@@ -20,9 +21,7 @@ namespace Ajiva.Installer
                 Current = JsonSerializer.Deserialize<CfgLayout>(File.ReadAllText(Cfg))!;
                 InstalledPrograms.Clear();
                 foreach (var currentInstallerInfo in Current.InstallerInfos.ToArray())
-                {
                     InstalledPrograms.Add(currentInstallerInfo);
-                }
             }
             else
             {
@@ -33,7 +32,8 @@ namespace Ajiva.Installer
                         new InstalledInfo
                         {
                             Description = "This Is An Sample", Name = "Sample", Path = ".", Progress = 0,
-                            IconSrc = @"C:\Windows\SystemResources\Windows.SystemToast.Calling\Images\Placeholder_buddy.png"
+                            IconSrc = @"C:\Windows\SystemResources\Windows.SystemToast.Calling\Images\Placeholder_buddy.png",
+                            UniqueIdentifier = Guid.NewGuid(),
                         }
                     }
                 };
@@ -48,8 +48,8 @@ namespace Ajiva.Installer
                 File.Delete(Cfg);
             }
 
-            var sjon = JsonSerializer.Serialize(Current, new() {WriteIndented = true});
-            File.WriteAllText(Cfg, sjon);
+            var sJon = JsonSerializer.Serialize(Current, new() {WriteIndented = true});
+            File.WriteAllText(Cfg, sJon);
         }
 
         public static CfgLayout Current { get; set; }
@@ -62,12 +62,12 @@ namespace Ajiva.Installer
 
                 if (e.NewItems is not null)
                     foreach (var eNewItem in e.NewItems.Cast<InstalledInfo>())
-                        if (Current.InstallerInfos.All(x => x.Path != eNewItem.Path && x.Name != eNewItem.Name))
+                        if (Current.InstallerInfos.All(x => x.UniqueIdentifier != eNewItem.UniqueIdentifier))
                             Current.InstallerInfos.Add(eNewItem);
 
                 if (e.OldItems is not null)
                     foreach (var eOldItem in e.OldItems.Cast<InstalledInfo>())
-                        Current.InstallerInfos.RemoveAll(x => x.Path == eOldItem.Path && x.Name == eOldItem.Name);
+                        Current.InstallerInfos.RemoveAll(x => x.UniqueIdentifier == eOldItem.UniqueIdentifier);
 
                 Save();
             };
