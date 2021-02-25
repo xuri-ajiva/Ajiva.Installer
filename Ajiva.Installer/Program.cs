@@ -1,11 +1,12 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Linq;
-using System.Runtime.InteropServices;
+using System.Threading.Tasks;
+using Ajiva.Installer.Core.Installer;
+using Ajiva.Installer.Helpers;
 using Ajiva.Installer.ViewModels;
 using Avalonia;
 using Avalonia.ReactiveUI;
+using Avalonia.Threading;
 
 namespace Ajiva.Installer
 {
@@ -17,7 +18,7 @@ namespace Ajiva.Installer
         public static int Main(string[] args)
         {
             Config.Load();
-
+            Interop.ShowWindow(Interop.GetConsoleWindow(), Interop.SW_HIDE);
             return BuildAvaloniaApp()
                 .StartWithClassicDesktopLifetime(args);
         }
@@ -28,35 +29,6 @@ namespace Ajiva.Installer
                 .UsePlatformDetect()
                 .LogToTrace()
                 .UseReactiveUI();
-
-        private static readonly List<RunningInfo> Running = new();
-
-        [DllImport("user32.dll", SetLastError = true)]
-        private static extern bool SetForegroundWindow(IntPtr hWnd);
-
-        public static void StartInstalled(InstalledInfo installedInfo)
-        {
-            Running.RemoveAll(x => !x.Running);
-            if (Running.FirstOrDefault(x => x.Info == installedInfo) is { } first)
-            {
-                SetForegroundWindow(first.Proc.MainWindowHandle);
-
-                return;
-            }
-
-            var run = new RunningInfo
-            {
-                Info = installedInfo,
-                Proc = new()
-                {
-                    StartInfo = installedInfo.StartInfo(),
-                }
-            };
-
-            Running.Add(run);
-
-            run.Proc.Start();
-        }
 
         public static void StartInstall(InstalledInfo installed, bool addToInstalled)
         {
@@ -75,7 +47,7 @@ namespace Ajiva.Installer
                 return;
             }
 
-            ShowWindow(GetConsoleWindow(), SW_SHOW);
+            Interop.ShowWindow(Interop.GetConsoleWindow(), Interop.SW_SHOW);
             var info = AjivaInstaller.InstallBlank(Console.WriteLine, new() {PackPath = installed.Source.LocalPath, InstallPath = installed.Path}, false, d =>
             {
                 if (d >= 1)
@@ -89,7 +61,7 @@ namespace Ajiva.Installer
                             Config.Save();
                         });
                         await Task.Delay(2000);
-                        ShowWindow(GetConsoleWindow(), SW_HIDE);
+                        Interop.ShowWindow(Interop.GetConsoleWindow(), Interop.SW_HIDE);
                     });
                     installed.Progress = 0;
                 }
