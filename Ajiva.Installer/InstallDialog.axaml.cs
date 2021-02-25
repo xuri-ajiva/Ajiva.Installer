@@ -49,7 +49,12 @@ namespace Ajiva.Installer
 
             this.Get<Button>("FFinish").IsEnabled = false;
             this.Get<Button>("FBack").IsEnabled = false;
-            Program.StartInstall(url, DataContextData.Path);
+            Program.StartInstall(new()
+            {
+                Source = url,
+                Path = DataContextData.Path,
+                UniqueIdentifier = Guid.NewGuid() //todo: get for, install pack
+            }, true);
             Close(true);
         }
 
