@@ -71,6 +71,11 @@ namespace Ajiva.Installer.ViewModels
             get => progress;
             set => this.RaiseAndSetIfChanged(ref progress, value);
         }
+        public Uri? Source
+        {
+            get => source;
+            set =>this.RaiseAndSetIfChanged(ref source , value);
+        }
 
         public ProcessStartInfo StartInfo()
         {
