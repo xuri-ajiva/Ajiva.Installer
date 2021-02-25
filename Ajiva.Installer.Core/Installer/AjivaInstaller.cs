@@ -117,16 +117,11 @@ namespace Ajiva.Installer.Core.Installer
             const int saveInterval = 0x10000000; //250 mb
             var path = result.SavePath();
 
-            if (File.Exists(path))
-            {
-                File.Delete(path);
-                Logger($"Deleted: {path}");
-            }
-
             DirectoryCreation(Path.GetDirectoryName(path)!);
 
-            Logger($"Opening File: {path}");
-            var fs = File.Open(path, FileMode.CreateNew, FileAccess.Write);
+            Logger($"{(File.Exists(path) ? "Overriding" : "Opening")} File: {path} ");
+
+            FileStream fs = File.Open(path, FileMode.OpenOrCreate, FileAccess.Write);
             fs.SetLength(result.InfoFile.Length);
             fs.Position = 0;
 
@@ -189,6 +184,7 @@ namespace Ajiva.Installer.Core.Installer
                 workers[i] = null!;
             }
             sync.Dispose();
+            GC.SuppressFinalize(this);
         }
 
         private static Dictionary<StructureSpecialFolder, string> BuildPathCache(string installationPath)
