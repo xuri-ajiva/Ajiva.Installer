@@ -49,7 +49,7 @@
 
     <Grid>
         <TabControl TabStripPlacement="Left" Margin="0,0,-6,0" SelectedIndex="0" Name="Pages">
-            <TabItem Header="Start" IsEnabled="True">
+            <TabItem Header="Start" IsEnabled="False">
                 <Border Classes="border">
                     <Grid>
                         <StackPanel Margin="50">
@@ -64,7 +64,7 @@
                     </Grid>
                 </Border>
             </TabItem>
-            <TabItem Header="Options" IsEnabled="True">
+            <TabItem Header="Options" IsEnabled="False">
                 <Border Classes="border">
                     <Grid>
                         <StackPanel Margin="50">
@@ -79,7 +79,7 @@
                     </Grid>
                 </Border>
             </TabItem>
-            <TabItem Header="Install" IsEnabled="True">
+            <TabItem Header="Install" IsEnabled="False">
                 <Border Classes="border">
                     <Grid>
                         <ListBox AutoScrollToSelectedItem="True" Items="{Binding Log}" Background="Transparent" Margin="5,5,5,45" Name="LoggerBox">
