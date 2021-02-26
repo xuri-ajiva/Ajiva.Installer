@@ -64,13 +64,48 @@ namespace Ajiva.Installer
             fButton.IsEnabled = false;
 
             this.Get<Button>("FBack").IsEnabled = false;
+
+            var loggerBox = this.Get<ListBox>("LoggerBox");
+
+            var dCtx = (DataContext as InstallDialogViewModel)!;
+
+            Queue<string?>? logs = new();
+
+            Task.Run(async () =>
+            {
+                while (logs != null)
+                {
+                    await Task.Delay(10);
+                    List<string?> strings;
+                    lock (logs)
+                    {
+                        strings = logs.ToList();
+                        logs.Clear();
+                    }
+                    await Dispatcher.UIThread.InvokeAsync(() =>
+                    {
+                        dCtx.Log!.AddRange(strings);
+                        loggerBox.ScrollIntoView(dCtx.Log.Count - 1);
+                    });
+                }
+            });
+
             Program.StartInstall(new()
             {
                 Source = url,
                 Path = DataContextData.Path,
                 UniqueIdentifier = Guid.NewGuid() //todo: get for, install pack
-            }, true);
-            Close(true);
+            }, true, log =>
+            {
+                if (logs is null) return;
+
+                lock (logs)
+                    logs.Enqueue(log);
+            }, () =>
+            {
+                logs = null;
+                Dispatcher.UIThread.InvokeAsync(() => fButton.IsEnabled = true);
+            });
         }
 
         private void Back_OnClick(object? sender, RoutedEventArgs e)
