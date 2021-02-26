@@ -82,7 +82,13 @@
             <TabItem Header="Install" IsEnabled="True">
                 <Border Classes="border">
                     <Grid>
-                        <TextBlock Name="FLog" />
+                        <ListBox AutoScrollToSelectedItem="True" Items="{Binding Log}" Background="Transparent" Margin="5,5,5,45" Name="LoggerBox">
+                            <ListBox.DataTemplates>
+                                <DataTemplate>
+                                    <TextBlock Margin="-9" FontSize="12" TextWrapping="Wrap" Text="{Binding }" />
+                                </DataTemplate>
+                            </ListBox.DataTemplates>
+                        </ListBox>
                         <Button Classes="back" Click="Back_OnClick" Name="FBack" />
                         <Button Classes="next" Content="Finish" Click="Finish_OnClick" Name="FFinish" />
                     </Grid>
