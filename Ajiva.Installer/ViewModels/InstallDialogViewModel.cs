@@ -1,4 +1,6 @@
-﻿using ReactiveUI;
+﻿using System.Collections.ObjectModel;
+using System.Linq;
+using ReactiveUI;
 
 namespace Ajiva.Installer.ViewModels
 {
@@ -28,5 +30,7 @@ namespace Ajiva.Installer.ViewModels
             get => path;
             set => this.RaiseAndSetIfChanged(ref path, value);
         }
+
+        public ObservableCollection<string> Log { get; set; } = new();
     }
 }
