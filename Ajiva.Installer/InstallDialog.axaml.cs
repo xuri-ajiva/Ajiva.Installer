@@ -1,10 +1,14 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using Ajiva.Installer.ViewModels;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Interactivity;
 using Avalonia.Markup.Xaml;
+using Avalonia.Threading;
+using DynamicData;
 
 namespace Ajiva.Installer
 {
@@ -37,8 +41,16 @@ namespace Ajiva.Installer
             Pages.SelectedIndex = (Pages.SelectedIndex + 1) % Pages.Items.Cast<object>().Count();
         }
 
+        public bool Installed;
+
         private void Finish_OnClick(object? sender, RoutedEventArgs e)
         {
+            if (Installed)
+            {
+                Close(true);
+                return;
+            }
+
             if (string.IsNullOrEmpty(DataContextData.Path))
             {
                 Back_OnClick(null, null!);
@@ -47,7 +59,10 @@ namespace Ajiva.Installer
 
             var url = new Uri(DataContextData.Url);
 
-            this.Get<Button>("FFinish").IsEnabled = false;
+            Installed = true;
+            var fButton = this.Get<Button>("FFinish");
+            fButton.IsEnabled = false;
+
             this.Get<Button>("FBack").IsEnabled = false;
             Program.StartInstall(new()
             {
