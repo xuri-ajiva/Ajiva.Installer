@@ -17,8 +17,8 @@ namespace Ajiva.Installer
         // yet and stuff might break.
         public static int Main(string[] args)
         {
+            Interop.Console.Hide();
             Config.Load();
-            Interop.ShowWindow(Interop.GetConsoleWindow(), Interop.SW_HIDE);
             return BuildAvaloniaApp()
                 .StartWithClassicDesktopLifetime(args);
         }
@@ -30,11 +30,13 @@ namespace Ajiva.Installer
                 .LogToTrace()
                 .UseReactiveUI();
 
-        public static void StartInstall(InstalledInfo installed, bool addToInstalled)
+        public static void StartInstall(InstalledInfo installed, bool addToInstalled, Action<string?>? log = null, Action? finishCallback = null, bool useConsole = false)
         {
             if (addToInstalled)
+            {
                 Config.InstalledPrograms.Add(installed);
-            Config.Save();
+                Config.Save();
+            }
 
             if (installed.Source is null) throw new ArgumentException("Source is null!", nameof(installed.Source), null);
             if (installed.Path is null) throw new ArgumentException("Path is null!", nameof(installed.Path), null);
@@ -47,21 +49,32 @@ namespace Ajiva.Installer
                 return;
             }
 
-            Interop.ShowWindow(Interop.GetConsoleWindow(), Interop.SW_SHOW);
-            var info = AjivaInstaller.InstallBlank(Console.WriteLine, new() {PackPath = installed.Source.LocalPath, InstallPath = installed.Path}, false, d =>
+            var isFinish = false;
+
+            if (useConsole)
+                Interop.Console.Show();
+
+            var info = AjivaInstaller.InstallBlank(x =>
             {
-                if (d >= 1)
+                if (useConsole)
+                    Console.WriteLine(x);
+
+                log?.Invoke(x);
+            }, new() {PackPath = installed.Source.LocalPath, InstallPath = installed.Path}, false, d =>
+            {
+                if (isFinish) return;
+                if (d >= 1 && !isFinish)
                 {
+                    isFinish = true;
                     Task.Run(async () =>
                     {
                         await Task.Delay(1000);
-                        await Dispatcher.UIThread.InvokeAsync(() =>
-                        {
-                            installed.AvailableAction = AvailableAction.Start;
-                            Config.Save();
-                        });
+                        installed.AvailableAction = AvailableAction.Start;
+                        Config.Save();
                         await Task.Delay(2000);
-                        Interop.ShowWindow(Interop.GetConsoleWindow(), Interop.SW_HIDE);
+                        finishCallback?.Invoke();
+                        if (useConsole)
+                            Interop.Console.Hide();
                     });
                     installed.Progress = 0;
                 }
@@ -76,6 +89,8 @@ namespace Ajiva.Installer
             installed.ExecutingOptions.Args ??= info.Info.Arguments;
             installed.ExecutingOptions.Executable ??= Path.Combine(nameof(installed.Path).ToDynamic(), info.Root.Name, info.Info.Executable);
             installed.ExecutingOptions.WorkDirectory ??= Path.GetDirectoryName(installed.ExecutingOptions.Executable)!;
+
+            Config.Save();
         }
     }
 }
