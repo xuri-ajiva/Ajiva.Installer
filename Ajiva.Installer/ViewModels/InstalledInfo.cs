@@ -17,7 +17,7 @@ namespace Ajiva.Installer.ViewModels
         private AvailableAction availableAction;
         private Uri? source;
         
-        public Guid UniqueIdentifier { get; set; }
+        public Guid? UniqueIdentifier { get; set; }
 
         public AvailableAction AvailableAction
         {
