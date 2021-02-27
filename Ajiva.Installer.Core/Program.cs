@@ -54,6 +54,7 @@ namespace Ajiva.Installer.Core
 
         public static void Main(string[] args)
         {
+            OpenLogFile();
             if (args.Length > 0)
             {
                 try
@@ -75,7 +76,7 @@ namespace Ajiva.Installer.Core
 
             void PackSome()
             {
-                Packer.BuildPack(LogHelper.GetInput("Path"), new InstallerInfo(LogHelper.GetInput("Name"), LogHelper.GetInput("Description"), LogHelper.GetInput("Executable"), LogHelper.GetInput("Arguments")));
+                Packer.BuildPack(LogHelper.GetInput("Path"), new(LogHelper.GetInput("Name"), LogHelper.GetInput("Description"),LogHelper.GetInput("IconSrc") , LogHelper.GetInput("Executable"), LogHelper.GetInput("Arguments")));
             }
 
             void FromSomePack()
