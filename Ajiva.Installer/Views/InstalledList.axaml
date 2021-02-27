@@ -8,47 +8,50 @@
     <Design.DataContext>
         <viewModels:MainWindowViewModel />
     </Design.DataContext>
-    
+
     <DockPanel>
-        <ItemsControl Items="{Binding Items}">
-            <ItemsControl.ItemTemplate>
-                <DataTemplate>
-                    <Border BorderThickness="2" BorderBrush="{StaticResource Border}" Margin="1" CornerRadius="2"
-                            Name="BorderItem">
-                        <Border.Styles>
-                            <Style Selector="Border:pointerover">
-                                <Setter Property="Background" Value="#10ffffff" />
-                            </Style>
-                        </Border.Styles>
-                        <Grid>
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition MaxWidth="{Binding WidthIcon}" />
-                                <ColumnDefinition Width="{Binding WidthText}" />
-                            </Grid.ColumnDefinitions>
-                            <ProgressBar Value="{Binding Path=Progress, Mode=OneWay}" Maximum="1" Minimum="0"
-                                         Height="{Binding WidthIcon}" Grid.Column="0" Grid.ColumnSpan="2"
-                                         Foreground="{StaticResource ProgressBar}" Background="Transparent" />
-                            <Image Grid.Column="0" Height="{Binding WidthIcon}" Width="{Binding WidthIcon}"
-                                   Source="{Binding Converter={StaticResource BitmapValueConverter}, Path=IconDynamic}"
-                                   Margin="0,0,0,0" VerticalAlignment="Top" HorizontalAlignment="Left" />
-                            <StackPanel Grid.Column="1" Margin="10,0,0,0">
-                                <Grid ColumnDefinitions="Auto,Auto,*" RowDefinitions="40,20">
-                                    <TextBlock FontSize="30" Grid.Column="1" Grid.Row="0" Text="{Binding Name}" />
-                                    <TextBlock Grid.Column="1" Grid.Row="1" Text="{Binding Description}" />
-                                    <DockPanel Grid.Column="2" Grid.Row="0" Grid.RowSpan="2" Height="50" Margin="5" HorizontalAlignment="Right">
-                                        <Button Height="50" Margin="5" HorizontalAlignment="Right" Click="Invoke_Click">
-                                            <TextBlock Width="80" Text="{Binding AvailableAction}" TextAlignment="Center" VerticalAlignment="Center" />
-                                        </Button>
-                                        <Button Height="50" Margin="5" HorizontalAlignment="Right" Click="Options_Click">
-                                            <TextBlock Width="80" Text="Options" TextAlignment="Center" VerticalAlignment="Center" />
-                                        </Button>
-                                    </DockPanel>
+        <ScrollViewer Padding="0,0,18,0" AllowAutoHide="False" VerticalScrollBarVisibility="Visible">
+            <ItemsControl Items="{Binding Items}">
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate>
+                        <Grid HorizontalAlignment="Stretch">
+                            <Border BorderThickness="2" BorderBrush="{StaticResource Border}" Margin="1" CornerRadius="2" Name="BorderItem">
+                                <Border.Styles>
+                                    <Style Selector="Border:pointerover">
+                                        <Setter Property="Background" Value="#10ffffff" />
+                                    </Style>
+                                </Border.Styles>
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition MaxWidth="{Binding WidthIcon}" />
+                                        <ColumnDefinition Width="{Binding WidthText}" />
+                                    </Grid.ColumnDefinitions>
+                                    <ProgressBar Value="{Binding Path=Progress, Mode=OneWay}" Maximum="1" Minimum="0"
+                                                 Height="{Binding WidthIcon}" Grid.Column="0" Grid.ColumnSpan="2"
+                                                 Foreground="{StaticResource ProgressBar}" Background="Transparent" />
+                                    <Image Grid.Column="0" Height="{Binding WidthIcon}" Width="{Binding WidthIcon}"
+                                           Source="{Binding Converter={StaticResource BitmapValueConverter}, Path=IconDynamic}"
+                                           Margin="0,0,0,0" VerticalAlignment="Top" HorizontalAlignment="Left" />
+                                    <StackPanel Grid.Column="1" Margin="10,0,0,0">
+                                        <Grid ColumnDefinitions="Auto,Auto,*" RowDefinitions="40,20">
+                                            <TextBlock FontSize="30" Grid.Column="1" Grid.Row="0" Text="{Binding Name}" />
+                                            <TextBlock Grid.Column="1" Grid.Row="1" Text="{Binding Description}" />
+                                            <DockPanel Grid.Column="2" Grid.Row="0" Grid.RowSpan="2" Height="50" Margin="5" HorizontalAlignment="Right">
+                                                <Button Height="50" Margin="5" HorizontalAlignment="Right" Click="Invoke_Click">
+                                                    <TextBlock Width="80" Text="{Binding AvailableAction}" TextAlignment="Center" VerticalAlignment="Center" />
+                                                </Button>
+                                                <Button Height="50" Margin="5" HorizontalAlignment="Right" Click="Options_Click">
+                                                    <TextBlock Width="80" Text="Options" TextAlignment="Center" VerticalAlignment="Center" />
+                                                </Button>
+                                            </DockPanel>
+                                        </Grid>
+                                    </StackPanel>
                                 </Grid>
-                            </StackPanel>
+                            </Border>
                         </Grid>
-                    </Border>
-                </DataTemplate>
-            </ItemsControl.ItemTemplate>
-        </ItemsControl>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+        </ScrollViewer>
     </DockPanel>
 </UserControl>
