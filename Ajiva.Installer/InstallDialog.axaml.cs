@@ -94,7 +94,6 @@ namespace Ajiva.Installer
             {
                 Source = url,
                 Path = DataContextData.Path,
-                UniqueIdentifier = Guid.NewGuid() //todo: get for, install pack
             }, true, log =>
             {
                 if (logs is null) return;

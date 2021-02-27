@@ -85,12 +85,13 @@ namespace Ajiva.Installer
                     installed.Progress = d * 100;
             }, 64);
 
-            //todo add icon
+            installed.UniqueIdentifier = info.StructureHash;
             installed.Description ??= info.Info.Description;
             installed.Name ??= info.Info.Name;
+            installed.IconSrc ??= Path.Combine(nameof(installed.Path).ToDynamic(), info.Root.Name, info.Info.IconSrc.TrimStart('\\'));
             installed.ExecutingOptions ??= new();
             installed.ExecutingOptions.Args ??= info.Info.Arguments;
-            installed.ExecutingOptions.Executable ??= Path.Combine(nameof(installed.Path).ToDynamic(), info.Root.Name, info.Info.Executable);
+            installed.ExecutingOptions.Executable ??= Path.Combine(nameof(installed.Path).ToDynamic(), info.Root.Name, info.Info.Executable.TrimStart('\\'));
             installed.ExecutingOptions.WorkDirectory ??= Path.GetDirectoryName(installed.ExecutingOptions.Executable)!;
 
             Config.Save();
