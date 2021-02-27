@@ -191,7 +191,7 @@ namespace Ajiva.Installer.Core.Installer
 
         public static AjivaInstallInfo InstallBlank(Action<string> logger, RunInfo info, bool waitForFinish, Action<double> percentageChanged, int workersCount)
         {
-            var installInfo = new AjivaInstallPacker(logger).FromPack(info.PackPath);
+            var installInfo = AjivaInstallPacker.FromPack(info.PackPath, logger);
             var inst = new AjivaInstaller(workersCount, logger);
             inst.InstallAsync(installInfo, info.InstallPath, percentageChanged);
 
