@@ -85,5 +85,10 @@ namespace Ajiva.Installer.Views
             Interop.FlashWindow(PlatformImpl.Handle.Handle, false);
             e.Cancel = true;
         }
+
+        private void Load_OnClick(object? sender, RoutedEventArgs e)
+        {
+            Config.Load();
+        }
     }
 }

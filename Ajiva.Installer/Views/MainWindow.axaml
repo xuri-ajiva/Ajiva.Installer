@@ -38,6 +38,7 @@
                 <StackPanel>
                     <TextBox Text="{Binding DefaultInstallPath}" />
                     <Button Click="Save_OnClick">Save</Button>
+                    <Button Click="Load_OnClick">Load</Button>
                 </StackPanel>
 
 
