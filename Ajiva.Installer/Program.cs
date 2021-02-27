@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics;
 using System.IO;
 using System.Threading.Tasks;
 using Ajiva.Installer.Core.Installer;
@@ -54,12 +55,14 @@ namespace Ajiva.Installer
             if (useConsole)
                 Interop.Console.Show();
 
-            var info = AjivaInstaller.InstallBlank(x =>
+            var info = AjivaInstaller.InstallBlank(s =>
             {
                 if (useConsole)
-                    Console.WriteLine(x);
+                    Console.WriteLine(s);
 
-                log?.Invoke(x);
+                if (log is null && !useConsole)
+                    Debug.WriteLine(s);
+                else log?.Invoke(s);
             }, new() {PackPath = installed.Source.LocalPath, InstallPath = installed.Path}, false, d =>
             {
                 if (isFinish) return;
