@@ -1,5 +1,7 @@
 ﻿using System;
+using System.Diagnostics;
 using System.IO;
+using System.Security.Cryptography;
 
 namespace Ajiva.Installer.Core.Installer.Pack
 {
@@ -7,10 +9,8 @@ namespace Ajiva.Installer.Core.Installer.Pack
     {
         private Stream Data { get; }
 
-        public PackHead? Header { get; private set; }
-
-        public StructureDirectory? Root { get; private set; }
-
+        public AjivaInstallInfo Info { get; } = new();
+        
         public PackReader(Stream data)
         {
             Data = data;
@@ -27,15 +27,33 @@ namespace Ajiva.Installer.Core.Installer.Pack
                 throw new ArgumentException("File is not the right type!");
             }
 
-            Header = Data.ReadJsonObjectAs<PackHead>(out _);
+            Info.Info = Data.ReadJsonObjectAs<InstallerInfo>(out _)!;
         }
 
         public void ReadStructure()
         {
-            if (Header == null) throw new InvalidOperationException();
-            if (Root != null) throw new InvalidOperationException();
-            Root = new(StructureSpecialFolder.InstallLocation, "");
-            Root.ReadFrom(Data);
+            if (Info.Info is null) throw new InvalidOperationException();
+            if (Info.Root is not null) throw new InvalidOperationException();
+            Info.Root = new(StructureSpecialFolder.InstallLocation, "");
+
+            var begin = Data.Position;
+
+            Info.Root.ReadFrom(Data);
+
+            var end = Data.Position;
+            Debug.Assert(end >= begin, "end >= begin, Structure was less then 0 bytes long");
+
+            byte[] structure = new byte[end - begin];
+
+            Data.Position = begin;
+            Data.Read(structure);
+
+            Debug.Assert(Data.Position == end, "Data.Position == end");
+
+            var hash = Md5CryptoServiceProvider.ComputeHash(structure);
+            Info.StructureHash = new(hash);
         }
+
+        private static readonly MD5CryptoServiceProvider Md5CryptoServiceProvider = new();
     }
 }

@@ -33,13 +33,11 @@ namespace Ajiva.Installer.Core.Installer.Pack
         {
             var pack = new PackBuilder();
 
-            pack.BuildStructure(root);
+            pack.BeginFileInfo(stream);
 
-            pack.BeginType(stream);
+            pack.WriteHeader(info);
 
-            pack.WriteHeader(new(0, (int)pack.StructureLength, info));
-
-            pack.WriteStructure();
+            pack.WriteStructure(root);
 
             var basePos = stream.Position;
 
@@ -96,29 +94,31 @@ namespace Ajiva.Installer.Core.Installer.Pack
             }
         }
 
-        public AjivaInstallInfo FromPack(string path)
+        public AjivaInstallInfo FromPack(string path) => FromPack(path, logger);
+
+        public static AjivaInstallInfo FromPack(string path, Action<string>? logger)
         {
             FileStream fs = File.OpenRead(File.Exists(path) ? path : File.Exists(path + PackageExtension) ? path + PackageExtension : throw new ArgumentException("Path is not a File!"));
 
-            var pack = new PackReader(fs);
+            Stream data = new BufferedStream(fs);
+
+            var pack = new PackReader(data);
 
             pack.ReadHead();
-            var head = pack.Header!;
-
-            var info = new AjivaInstallInfo
-            {
-                Info = head.Information,
-            };
 
             pack.ReadStructure();
-            info.Root = pack.Root!;
 
-            var ln = fs.Length - fs.Position;
+            logger?.Invoke($"Hash: {pack.Info.StructureHash}");
 
-            AjivaInstallInfo BuildFromMemory()
+            var ln = data.Length - data.Position;
+
+            logger?.Invoke($"Contend Length: {ln}");
+
+            void BuildFromMemory(StructureDirectory root)
             {
+                logger?.Invoke("Building FileStructure in Memory");
                 Memory<byte> fileBuffer = new byte[ln]; // all data except header
-                fs.Read(fileBuffer.Span);
+                data.Read(fileBuffer.Span);
 
                 void RecFillFiles(StructureDirectory dir)
                 {
@@ -132,21 +132,21 @@ namespace Ajiva.Installer.Core.Installer.Pack
                     }
                 }
 
-                RecFillFiles(pack.Root!);
-
-                return info;
+                RecFillFiles(root);
             }
 
-            AjivaInstallInfo BuildFromFile()
+            void BuildFromFile(StructureDirectory root)
             {
-                var pos = fs.Position;
+                logger?.Invoke("Building FileStructure with Reference to Pack");
+
+                var pos = data.Position;
                 object syncLock = new();
 
                 void RecFillFiles(StructureDirectory dir)
                 {
                     foreach (var file in dir.Files)
                     {
-                        file.File = new PackFileInstallerFile(fs, ref syncLock, pos + file.Pos) {Length = file.Length, Location = file.Name};
+                        file.File = new PackFileInstallerFile(data, ref syncLock, pos + file.Pos) {Length = file.Length, Location = file.Name};
                     }
                     foreach (var directory in dir.Directories)
                     {
@@ -154,12 +154,14 @@ namespace Ajiva.Installer.Core.Installer.Pack
                     }
                 }
 
-                RecFillFiles(pack.Root!);
-
-                return info;
+                RecFillFiles(root);
             }
 
-            return ln < int.MaxValue ? BuildFromMemory() : BuildFromFile();
+            if (ln < int.MaxValue)
+                BuildFromMemory(pack.Info.Root);
+            else BuildFromFile(pack.Info.Root);
+
+            return pack.Info;
         }
 
         private static bool OpenFile(string @out, out FileStream fs)
