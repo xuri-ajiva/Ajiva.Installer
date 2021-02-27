@@ -43,7 +43,7 @@
                         <TextBox Grid.Column="1" Text="{Binding Path=Path,Mode= OneWay}" IsReadOnly="True" />
                     </Grid>
                     <Grid ColumnDefinitions="140,*">
-                        <TextBlock Text="Guid" />
+                        <TextBlock Text="Structure Hash" />
                         <TextBox Grid.Column="1" Text="{Binding Path=UniqueIdentifier,Mode= OneWay}" IsReadOnly="True" />
                     </Grid>
                     <Grid ColumnDefinitions="140,*">
