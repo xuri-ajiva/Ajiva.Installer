@@ -6,11 +6,11 @@ namespace Ajiva.Installer.Core.Installer.FileTypes
 {
     public class PackFileInstallerFile : IInstallerFile
     {
-        private readonly FileStream pack;
+        private readonly Stream pack;
         private readonly object fileLock;
         private readonly long position;
 
-        public PackFileInstallerFile(FileStream pack, ref object fileLock, long position)
+        public PackFileInstallerFile(Stream pack, ref object fileLock, long position)
         {
             this.pack = pack;
             this.fileLock = fileLock;
