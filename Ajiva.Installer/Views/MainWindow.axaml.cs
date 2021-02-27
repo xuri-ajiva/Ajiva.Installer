@@ -47,15 +47,17 @@ namespace Ajiva.Installer.Views
             DataContextData.IsPopupVisible = false;
         }
 
-        private InstallDialog? Dialog;
-
         private void Add_OnClick(object? sender, RoutedEventArgs e)
         {
-            if ((Dialog is not null && Dialog.IsVisible) || (Dialog == null))
-                Dialog = new();
-            
-            Dialog.DataContext = new InstallDialogViewModel {Path = Config.Current.DefaultPathRef};
-            Dialog.Show(this);
+            InstallDialog dialog = new()
+            {
+                DataContext = new InstallDialogViewModel
+                {
+                    Path = Config.Current.DefaultPathRef
+                }
+            };
+
+            dialog.Show(this);
         }
 
         private void Save_OnClick(object? sender, RoutedEventArgs e)
@@ -65,7 +67,7 @@ namespace Ajiva.Installer.Views
 
         private void Window_OnClosing(object? sender, CancelEventArgs e)
         {
-            RunHelper.Running.RemoveAll(x=> !x.Running);
+            RunHelper.Running.RemoveAll(x => !x.Running);
             foreach (var runningInfo in RunHelper.Running)
             {
                 Task.Run(() =>
